@@ -42,6 +42,8 @@ void Expression_ForceRedraw(void) {
     dirty = 1;
 }
 
+#define EXPR_SCALE  2  /* runtime nearest-neighbor 2x scale */
+
 void Expression_Tick(void) {
     uint32_t now = HAL_GetTick();
 
@@ -60,9 +62,12 @@ void Expression_Tick(void) {
     if (dirty) {
         const uint16_t *bitmap = emo_frames[current_emo][current_frame];
         if (bitmap) {
-            uint16_t x = (ILI9341_WIDTH  - EMO_FRAME_SIZE) / 2;
-            uint16_t y = (ILI9341_HEIGHT - EMO_FRAME_SIZE) / 2;
-            ILI9341_DrawBitmap(x, y, EMO_FRAME_SIZE, EMO_FRAME_SIZE, bitmap);
+            uint16_t sw = EMO_FRAME_SIZE * EXPR_SCALE;
+            uint16_t sh = EMO_FRAME_SIZE * EXPR_SCALE;
+            uint16_t x = (ILI9341_WIDTH  - sw) / 2;
+            uint16_t y = (ILI9341_HEIGHT - sh) / 2;
+            ILI9341_DrawBitmapScaled(x, y, EMO_FRAME_SIZE, EMO_FRAME_SIZE,
+                                     bitmap, EXPR_SCALE);
         }
         dirty = 0;
     }

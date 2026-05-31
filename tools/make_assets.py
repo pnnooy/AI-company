@@ -230,11 +230,11 @@ def generate_assets(png_files, size):
     with open(h_path, "w", encoding="utf-8") as f:
         f.write("#ifndef EXPRESSION_ASSETS_H\n")
         f.write("#define EXPRESSION_ASSETS_H\n\n")
-        f.write("#include <stdint.h>\n\n")
+        f.write("#include <stdint.h>\n")
+        f.write('#include "expression_types.h"\n\n')
         f.write(f"#define EMO_FRAME_SIZE  {size}\n")
         f.write(f"#define EMO_PIXEL_COUNT {size * size}\n")
-        f.write(f"#define EMO_MAX_FRAMES  {max_frames}\n")
-        f.write(f"#define EMO_COUNT       8\n\n")
+        f.write(f"#define EMO_MAX_FRAMES  {max_frames}\n\n")
 
         # Forward declare each frame array
         for name in expr_order:

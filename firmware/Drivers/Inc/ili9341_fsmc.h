@@ -22,6 +22,8 @@ void ILI9341_SetWindow(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
 void ILI9341_FillScreen(uint16_t color);
 void ILI9341_FillRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color);
 void ILI9341_DrawBitmap(uint16_t x, uint16_t y, uint16_t w, uint16_t h, const uint16_t *data);
+void ILI9341_DrawBitmapScaled(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
+                              const uint16_t *data, uint8_t scale);
 void ILI9341_DrawPixel(uint16_t x, uint16_t y, uint16_t color);
 
 #endif

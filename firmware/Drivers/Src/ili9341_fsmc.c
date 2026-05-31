@@ -175,13 +175,25 @@ void ILI9341_SetWindow(uint16_t x, uint16_t y, uint16_t w, uint16_t h) {
 
 void ILI9341_DrawBitmap(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
                         const uint16_t *data) {
-    ILI9341_SetWindow(x, y, w, h);
+    ILI9341_DrawBitmapScaled(x, y, w, h, data, 1);
+}
+
+void ILI9341_DrawBitmapScaled(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
+                              const uint16_t *data, uint8_t scale) {
+    uint16_t ow = w * scale;
+    uint16_t oh = h * scale;
+    ILI9341_SetWindow(x, y, ow, oh);
     ILI9341_WriteCmd(ILI9341_CMD_RAMWR);
 
-    /* Rotate 90° CW: data[row][col] → screen[h-1-row][w-1-col] */
+    /* Rotate 90° CW + nearest-neighbor scale */
     for (int col = (int)w - 1; col >= 0; col--) {
-        for (int row = 0; row < (int)h; row++) {
-            LCD_DATA = data[row * w + col];
+        for (int s = 0; s < scale; s++) {
+            for (int row = 0; row < (int)h; row++) {
+                uint16_t c = data[row * w + col];
+                for (int r = 0; r < scale; r++) {
+                    LCD_DATA = c;
+                }
+            }
         }
     }
 }

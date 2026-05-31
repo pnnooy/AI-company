@@ -4,8 +4,8 @@
 #include <stdint.h>
 #include "expression_types.h"
 
-#define EMO_FRAME_SIZE  40
-#define EMO_PIXEL_COUNT 1600
+#define EMO_FRAME_SIZE  80
+#define EMO_PIXEL_COUNT 6400
 #define EMO_MAX_FRAMES  3
 
 extern const uint16_t emo_normal_f0[EMO_PIXEL_COUNT];
