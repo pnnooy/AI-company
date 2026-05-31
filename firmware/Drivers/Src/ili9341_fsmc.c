@@ -149,18 +149,9 @@ void ILI9341_Init(void) {
     /* Display ON */
     ILI9341_WriteCmd(0x29);
 
-    /* GramScan mode 6: portrait, 240x320, top-left→bottom-right */
+    /* MADCTL: landscape 320x240 (X-Y swap), top-left origin, RGB order */
     ILI9341_WriteCmd(0x36);
-    ILI9341_WriteData(0xC8);
-
-    /* Set full coordinate range */
-    ILI9341_WriteCmd(0x2A);
-    ILI9341_WriteData(0x00); ILI9341_WriteData(0x00);
-    ILI9341_WriteData(0x00); ILI9341_WriteData(0xEF);  /* X: 0-239 */
-    ILI9341_WriteCmd(0x2B);
-    ILI9341_WriteData(0x00); ILI9341_WriteData(0x00);
-    ILI9341_WriteData(0x01); ILI9341_WriteData(0x3F);  /* Y: 0-319 */
-    ILI9341_WriteCmd(0x2C);
+    ILI9341_WriteData(0x28);
 
     ILI9341_FillScreen(COLOR_BLACK);
 }
@@ -187,9 +178,11 @@ void ILI9341_DrawBitmap(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
     ILI9341_SetWindow(x, y, w, h);
     ILI9341_WriteCmd(ILI9341_CMD_RAMWR);
 
-    uint32_t count = (uint32_t)w * h;
-    for (uint32_t i = 0; i < count; i++) {
-        LCD_DATA = data[i];
+    /* Rotate 90° CW: data[row][col] → screen[h-1-row][w-1-col] */
+    for (int col = (int)w - 1; col >= 0; col--) {
+        for (int row = 0; row < (int)h; row++) {
+            LCD_DATA = data[row * w + col];
+        }
     }
 }
 
