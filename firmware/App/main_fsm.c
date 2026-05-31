@@ -25,6 +25,7 @@
 #define DISPLAY_UPDATE_MS 16      /* ~60fps for animation smoothness */
 
 static SystemState current_state;
+static uint8_t     pose_enabled = 1;    /* MPU6050 polling on by default */
 static uint32_t    last_touch_tick;
 static uint32_t    last_nfc_tick;
 static uint32_t    last_mpu_tick;
@@ -128,7 +129,7 @@ void FSM_Tick(void) {
     }
 
     /* MPU6050 polling */
-    if (now - last_mpu_tick >= MPU_POLL_MS) {
+    if (pose_enabled && now - last_mpu_tick >= MPU_POLL_MS) {
         last_mpu_tick = now;
         if (MPU6050_ReadData(&mpu_data)) {
             PoseState pose = MPU6050_DetectPose(&mpu_data);
@@ -195,4 +196,8 @@ const char* FSM_StateString(SystemState s) {
         case SYS_ALERT:    return "ALERT";
         default:           return "???";
     }
+}
+
+void FSM_SetPoseEnable(uint8_t en) {
+    pose_enabled = en;
 }

@@ -87,10 +87,16 @@ static void TextCmdHandler(const char *line) {
         } else {
             UART_Printf("MPU6050 not found (SW I2C PA11/PA12)\r\n");
         }
+    } else if (strcmp(line, "mpuoff") == 0) {
+        FSM_SetPoseEnable(0);
+        UART_Printf("MPU polling OFF\r\n");
+    } else if (strcmp(line, "mpuon") == 0) {
+        FSM_SetPoseEnable(1);
+        UART_Printf("MPU polling ON\r\n");
     } else if (strcmp(line, "state") == 0) {
         UART_Printf("STATE: %s\r\n", FSM_StateString(FSM_GetState()));
     } else if (strcmp(line, "help") == 0) {
-        UART_Printf("Commands: led R G B, mpu, state, help\r\n");
+        UART_Printf("Commands: led R G B, mpu, mpuoff, mpuon, state, help\r\n");
     } else if (strlen(line) > 0) {
         UART_Printf("? '%s'\r\n", line);
     }

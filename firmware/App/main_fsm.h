@@ -15,5 +15,6 @@ void FSM_Init(void);
 void FSM_Tick(void);
 SystemState FSM_GetState(void);
 const char* FSM_StateString(SystemState s);
+void FSM_SetPoseEnable(uint8_t en);
 
 #endif

@@ -50,6 +50,7 @@
 | SHAKE 检测 | ✅ | 晃动/旋转, gyro > 200°/s |
 | FALL 检测 | ✅ | 快速突然移动, accel < 0.4g 或 > 2.5g |
 | 串口命令 `mpu` | ✅ | 输出 accel/gyro/pose |
+| `mpuoff`/`mpuon` | ✅ | 停止/恢复姿态轮询, 拔模块后关掉 |
 | 模块上拉 | ✅ | MPU6050 模块自带 4.7kΩ |
 
 **关键发现**: FSMC NADV 与 I2C1_SDA 共用 PB7, 硬件冲突. **不可使用硬件 I2C1**. 野火 PDF 第47章推荐软件 I2C 方案.
