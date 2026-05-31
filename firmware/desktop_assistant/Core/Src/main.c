@@ -87,6 +87,22 @@ static void TextCmdHandler(const char *line) {
         } else {
             UART_Printf("MPU6050 not found (SW I2C PA11/PA12)\r\n");
         }
+    } else if (strncmp(line, "emo ", 4) == 0) {
+        const char *names[] = {"normal","happy","focus","angry","sleep","surprise","sad","love"};
+        for (int ei = 0; ei < 8; ei++) {
+            if (strstr(line + 4, names[ei])) {
+                Expression_Set((Expression)ei);
+                UART_Printf("OK: emo=%s\r\n", names[ei]);
+                break;
+            }
+        }
+    } else if (strncmp(line, "lcd ", 4) == 0) {
+        int r, g, b;
+        if (sscanf(line + 4, "%d %d %d", &r, &g, &b) == 3) {
+            uint16_t c = ((r>>3)<<11) | ((g>>2)<<5) | (b>>3);
+            ILI9341_FillScreen(c);
+            UART_Printf("LCD fill: RGB(%d,%d,%d)\r\n", r, g, b);
+        }
     } else if (strcmp(line, "mpuoff") == 0) {
         FSM_SetPoseEnable(0);
         UART_Printf("MPU polling OFF\r\n");
