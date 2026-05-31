@@ -38,6 +38,10 @@ static void ILI9341_WriteCmd(uint8_t cmd) {
     LCD_CMD = cmd;
 }
 
+static __inline uint16_t PIXEL(uint16_t c) {
+    return ((c << 8) | (c >> 8));
+}
+
 static void ILI9341_WriteData(uint16_t data) {
     LCD_DATA = data;
 }
@@ -149,9 +153,12 @@ void ILI9341_Init(void) {
     /* Display ON */
     ILI9341_WriteCmd(0x29);
 
+    /* Display Inversion ON (corrects PCB color inversion) */
+    ILI9341_WriteCmd(0x21);
+
     /* MADCTL: landscape 320x240 (X-Y swap), top-left origin, RGB order */
     ILI9341_WriteCmd(0x36);
-    ILI9341_WriteData(0x28);
+    ILI9341_WriteData(0x20);
 
     ILI9341_FillScreen(COLOR_BLACK);
 }
@@ -191,7 +198,7 @@ void ILI9341_DrawBitmapScaled(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
             for (int row = 0; row < (int)h; row++) {
                 uint16_t c = data[row * w + col];
                 for (int r = 0; r < scale; r++) {
-                    LCD_DATA = c;
+                    LCD_DATA = PIXEL(c);
                 }
             }
         }
@@ -205,7 +212,7 @@ void ILI9341_FillRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
 
     uint32_t count = (uint32_t)w * h;
     for (uint32_t i = 0; i < count; i++) {
-        LCD_DATA = color;
+        LCD_DATA = PIXEL(color);
     }
 }
 
@@ -216,5 +223,5 @@ void ILI9341_FillScreen(uint16_t color) {
 void ILI9341_DrawPixel(uint16_t x, uint16_t y, uint16_t color) {
     ILI9341_SetWindow(x, y, 1, 1);
     ILI9341_WriteCmd(ILI9341_CMD_RAMWR);
-    LCD_DATA = color;
+    LCD_DATA = PIXEL(color);
 }
