@@ -592,6 +592,11 @@
               <FileType>1</FileType>
               <FilePath>../../Drivers/Src/rc522_spi.c</FilePath>
             </File>
+            <File>
+              <FileName>soft_i2c.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../Drivers/Src/soft_i2c.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

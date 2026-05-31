@@ -32,6 +32,7 @@
 #include "uart_comm.h"
 #include "touch_sensor.h"
 #include "mpu6050_hal.h"
+#include "soft_i2c.h"
 #include "rc522_spi.h"
 #include "expression_engine.h"
 #include "main_fsm.h"
@@ -77,10 +78,19 @@ static void TextCmdHandler(const char *line) {
             RGB_SetColor((uint8_t)r, (uint8_t)g, (uint8_t)b);
             UART_Printf("OK: LED=(%d,%d,%d)\r\n", r, g, b);
         }
+    } else if (strcmp(line, "mpu") == 0) {
+        MPU6050_Data d;
+        if (MPU6050_ReadData(&d)) {
+            UART_Printf("ACC: X=%.2f Y=%.2f Z=%.2f g\r\n", d.ax, d.ay, d.az);
+            UART_Printf("GYRO: X=%.1f Y=%.1f Z=%.1f deg/s\r\n", d.gx, d.gy, d.gz);
+            UART_Printf("POSE: %s\r\n", PoseState_String(MPU6050_DetectPose(&d)));
+        } else {
+            UART_Printf("MPU6050 not found (SW I2C PA11/PA12)\r\n");
+        }
     } else if (strcmp(line, "state") == 0) {
         UART_Printf("STATE: %s\r\n", FSM_StateString(FSM_GetState()));
     } else if (strcmp(line, "help") == 0) {
-        UART_Printf("Commands: led R G B, state, help\r\n");
+        UART_Printf("Commands: led R G B, mpu, state, help\r\n");
     } else if (strlen(line) > 0) {
         UART_Printf("? '%s'\r\n", line);
     }
@@ -166,13 +176,13 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+  RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-  RCC_OscInitStruct.HSEState = RCC_HSE_OFF;
-  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI_DIV2;
-  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL16;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();

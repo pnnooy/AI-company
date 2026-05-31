@@ -3,13 +3,12 @@
 
 #include <stdint.h>
 
-#define MPU6050_I2C_ADDR  0xD0  /* AD0=0, shifted for HAL */
+#define MPU6050_I2C_ADDR  0xD2  /* 0xD0=AD0低, 0xD2=AD0高. 大多数模块AD0默认高 */
 
 typedef enum {
     POSE_STABLE = 0,
     POSE_FALL,
-    POSE_SHAKE,
-    POSE_PICKUP
+    POSE_SHAKE
 } PoseState;
 
 typedef struct {

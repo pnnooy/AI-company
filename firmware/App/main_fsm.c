@@ -137,9 +137,7 @@ void FSM_Tick(void) {
                 UART_Printf("[POSE] FALL\r\n");
             } else if (pose == POSE_SHAKE) {
                 last_interact_tick = now;
-                if (current_state == SYS_SLEEP) {
-                    FSM_ChangeState(SYS_IDLE);
-                }
+                if (current_state == SYS_SLEEP) FSM_ChangeState(SYS_IDLE);
                 UART_Printf("[POSE] SHAKE\r\n");
             }
         }
