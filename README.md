@@ -34,7 +34,7 @@
 | 配置工具 | STM32CubeMX (生成 HAL 初始化代码) |
 | HAL 库 | STM32Cube_FW_F1 |
 | 烧录器 | Fire-Debugger (野火 DAP, CMSIS-DAP 标准) |
-| 串口工具 | SSCOM (COM6, 115200-8-N-1, **关 DTR/RTS**) |
+| 串口工具 | SSCOM V5.13.1（仓库自带 `串口调试工具SSCOM/`，**关 DTR/RTS**）|
 | Python | 3.9+ (Pillow 用于图片素材生成) |
 
 ### 克隆与编译
@@ -47,7 +47,7 @@ cd AI-company
 1. 打开 `firmware/desktop_assistant/MDK-ARM/desktop_assistant.uvprojx`
 2. Keil 中 F7 编译（应 0 Error 0 Warning）
 3. F8 烧录（Fire-Debugger 连接 SWD 接口）
-4. 打开 SSCOM 串口工具，COM6, 115200-8-N-1，关闭 DTR/RTS
+4. 打开 `串口调试工具SSCOM/sscom.5.13.1.exe`，COM6, 115200-8-N-1，关闭 DTR/RTS
 5. 复位后应看到 `Desktop Assistant Ready`
 
 ### 时钟说明
@@ -70,6 +70,9 @@ AI-company/
 ├── 硬件资料/
 │   ├── 硬件清单05-01.pdf
 │   └── 【野火】零死角玩转STM32—F103指南者.pdf
+├── 串口调试工具SSCOM/           # 团队统一串口工具 (SSCOM V5.13.1)
+│   ├── sscom.5.13.1.exe
+│   └── sscom51.ini               # 预配置: COM6, 115200-8-N-1
 ├── firmware/
 │   ├── desktop_assistant/        # CubeMX 生成的 Keil 工程
 │   │   ├── Core/Src/main.c       # 主入口 + 串口命令处理
