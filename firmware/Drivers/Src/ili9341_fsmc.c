@@ -38,8 +38,13 @@ static void ILI9341_WriteCmd(uint8_t cmd) {
     LCD_CMD = cmd;
 }
 
+/* PCB swaps D[15:11]↔D[10:6] (R↔G[5:1]), D[5](G[0]) stays, D[4:0](B) stays.
+ * Pre-swap to cancel out: write {G[5:1], R[4:0], G[0], B[4:0]} on STM32. */
 static __inline uint16_t PIXEL(uint16_t c) {
-    return ((c << 8) | (c >> 8));
+    uint16_t r = (c >> 11) & 0x1F;
+    uint16_t g = (c >>  5) & 0x3F;
+    uint16_t b =  c        & 0x1F;
+    return ((g >> 1) << 11) | (r << 6) | ((g & 1) << 5) | b;
 }
 
 static void ILI9341_WriteData(uint16_t data) {
@@ -153,9 +158,6 @@ void ILI9341_Init(void) {
     /* Display ON */
     ILI9341_WriteCmd(0x29);
 
-    /* Display Inversion ON (corrects PCB color inversion) */
-    ILI9341_WriteCmd(0x21);
-
     /* MADCTL: landscape 320x240 (X-Y swap), top-left origin, RGB order */
     ILI9341_WriteCmd(0x36);
     ILI9341_WriteData(0x20);
@@ -224,4 +226,44 @@ void ILI9341_DrawPixel(uint16_t x, uint16_t y, uint16_t color) {
     ILI9341_SetWindow(x, y, 1, 1);
     ILI9341_WriteCmd(ILI9341_CMD_RAMWR);
     LCD_DATA = PIXEL(color);
+}
+
+/*
+ * Diagnostic test pattern: 8 primary colors + 16-bit walk.
+ * Reveals the exact PCB bit mapping by lighting up one bit at a time.
+ *
+ * Top (y=0–79):   8 color bars, 40×80 each
+ *   [BLK] [RED] [GRN] [BLU] [YEL] [CYN] [MAG] [WHT]
+ *
+ * Bottom (y=80–239): 4×4 bit-walk grid, 80×40 each
+ *   Row 0: bits  0–3  (blue channel LSBs)
+ *   Row 1: bits  4–7  (blue MSB + green LSBs)
+ *   Row 2: bits  8–11 (green mids + red LSB)
+ *   Row 3: bits 12–15 (red channel MSBs)
+ */
+void ILI9341_DrawTestPattern(void) {
+    ILI9341_FillScreen(COLOR_BLACK);
+
+    /* ── Row 0: 8 primary colors ── */
+    static const uint16_t prim_colors[8] = {
+        0x0000,  /* Black  */
+        0xF800,  /* Red    */
+        0x07E0,  /* Green  */
+        0x001F,  /* Blue   */
+        0xFFE0,  /* Yellow */
+        0x07FF,  /* Cyan   */
+        0xF81F,  /* Magenta*/
+        0xFFFF   /* White  */
+    };
+    for (int i = 0; i < 8; i++) {
+        ILI9341_FillRect(i * 40, 0, 40, 80, prim_colors[i]);
+    }
+
+    /* ── Row 1–4: Bit walk (16 bits, one bit per square) ── */
+    for (int bit = 0; bit < 16; bit++) {
+        int col = bit & 3;            /* 0–3 */
+        int row = bit >> 2;           /* 0–3 */
+        uint16_t val = 1 << bit;
+        ILI9341_FillRect(col * 80, 80 + row * 40, 80, 40, val);
+    }
 }

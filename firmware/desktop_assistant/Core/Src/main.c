@@ -104,16 +104,10 @@ static void TextCmdHandler(const char *line) {
             UART_Printf("LCD fill: RGB(%d,%d,%d)\r\n", r, g, b);
         }
     } else if (strcmp(line, "calib") == 0) {
-        /* 4-square color calibration: Red, Green, Blue, White */
-        uint16_t r = ((255>>3)<<11) | ((0>>2)<<5) | (0>>3);   /* 0xF800 */
-        uint16_t g = ((0>>3)<<11) | ((255>>2)<<5) | (0>>3);   /* 0x07E0 */
-        uint16_t b = ((0>>3)<<11) | ((0>>2)<<5) | (255>>3);   /* 0x001F */
-        uint16_t w = 0xFFFF;
-        ILI9341_FillRect(0,   0,   160, 120, r);  /* top-left: Red */
-        ILI9341_FillRect(160, 0,   160, 120, g);  /* top-right: Green */
-        ILI9341_FillRect(0,   120, 160, 120, b);  /* bot-left: Blue */
-        ILI9341_FillRect(160, 120, 160, 120, w);  /* bot-right: White */
-        UART_Printf("Calib grid: R|G  B|W\r\n");
+        ILI9341_DrawTestPattern();
+        UART_Printf("Test pattern: 8 colors + 16-bit walk\r\n");
+        UART_Printf("Top: BLK RED GRN BLU YEL CYN MAG WHT\r\n");
+        UART_Printf("Bot: 4x4 bit walk (bit0-15, left-right, top-down)\r\n");
         FSM_SetPoseEnable(0);
         UART_Printf("MPU polling OFF\r\n");
     } else if (strcmp(line, "mpuon") == 0) {

@@ -23,7 +23,7 @@ def rgb888_to_rgb565(r, g, b):
     return ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3)
 
 
-def png_to_c_array(png_path, output_dir=None):
+def png_to_c_array(png_path, output_dir=None, invert=False):
     """Convert a PNG file to RGB565 C source + header files."""
     img = Image.open(png_path).convert("RGB")
     w, h = img.size
@@ -56,6 +56,8 @@ def png_to_c_array(png_path, output_dir=None):
 
         values = []
         for r, g, b in pixels:
+            if invert:
+                r, g, b = 255 - r, 255 - g, 255 - b
             values.append(f"0x{rgb888_to_rgb565(r, g, b):04X}")
 
         # Format with 16 values per line
@@ -112,16 +114,22 @@ def main():
         print(__doc__)
         sys.exit(1)
 
-    for arg in sys.argv[1:]:
-        if arg == "--check":
-            continue
-        if sys.argv[1] == "--check":
-            for f in sys.argv[2:]:
-                check_c_array(f)
-            return
+    invert = False
+    args = sys.argv[1:]
+    if "--invert" in args:
+        invert = True
+        args.remove("--invert")
+
+    if "--check" in args:
+        args.remove("--check")
+        for f in args:
+            check_c_array(f)
+        return
+
+    for arg in args:
         if arg.endswith(".png"):
             try:
-                png_to_c_array(arg)
+                png_to_c_array(arg, invert=invert)
             except Exception as e:
                 print(f"ERROR: {arg}: {e}")
         else:

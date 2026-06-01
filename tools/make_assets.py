@@ -61,11 +61,13 @@ def resize_pixel_art(img, size):
     return img.resize((size, size), Image.NEAREST)
 
 
-def img_to_rgb565(img):
+def img_to_rgb565(img, invert=False):
     """Convert PIL RGB image to list of RGB565 uint16 values."""
     data = []
     pixels = img.getdata()
     for r, g, b in pixels:
+        if invert:
+            r, g, b = 255 - r, 255 - g, 255 - b
         data.append(rgb565(r, g, b))
     return data
 
@@ -199,7 +201,7 @@ def parse_name(png_path):
     return stem, 0
 
 
-def generate_assets(png_files, size):
+def generate_assets(png_files, size, invert=False):
     """Convert all PNGs to RGB565 and generate combined expression_assets.c/.h"""
 
     # Group by expression name
@@ -211,7 +213,7 @@ def generate_assets(png_files, size):
         img = Image.open(png).convert("RGB")
         if img.size != (size, size):
             img = resize_pixel_art(img, size)
-        data = img_to_rgb565(img)
+        data = img_to_rgb565(img, invert)
         frames[name][fnum] = data
         print(f"  {png.name}: {size}×{size} → {len(data)} pixels")
 
@@ -327,6 +329,7 @@ def generate_assets(png_files, size):
 def main():
     size = DEFAULT_SIZE
     dry = False
+    invert = False
 
     args = sys.argv[1:]
     i = 0
@@ -335,10 +338,12 @@ def main():
             size = int(args[i+1]); i += 2
         elif args[i] == "--dry":
             dry = True; i += 1
+        elif args[i] == "--invert":
+            invert = True; i += 1
         else:
             print(f"Unknown: {args[i]}"); i += 1
 
-    print(f"Expression Asset Generator (size={size})\n")
+    print(f"Expression Asset Generator (size={size}{', inverted' if invert else ''})\n")
 
     png_files = scan_assets(size)
 
@@ -348,7 +353,7 @@ def main():
         print(f"\n  {len(png_files)} files total (dry run)")
         return
 
-    generate_assets(png_files, size)
+    generate_assets(png_files, size, invert)
 
 
 if __name__ == "__main__":

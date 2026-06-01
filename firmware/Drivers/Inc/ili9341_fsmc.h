@@ -25,5 +25,6 @@ void ILI9341_DrawBitmap(uint16_t x, uint16_t y, uint16_t w, uint16_t h, const ui
 void ILI9341_DrawBitmapScaled(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
                               const uint16_t *data, uint8_t scale);
 void ILI9341_DrawPixel(uint16_t x, uint16_t y, uint16_t color);
+void ILI9341_DrawTestPattern(void);
 
 #endif
