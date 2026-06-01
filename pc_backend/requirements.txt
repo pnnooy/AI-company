@@ -1,0 +1,13 @@
+# PC Backend Dependencies
+pyserial>=3.5
+numpy>=1.24
+opencv-python>=4.8
+Pillow>=10.0
+
+# AI / LLM (V3, 按需安装)
+# anthropic>=0.30
+# openai>=1.0
+
+# Dev
+pytest>=7.0
+ruff>=0.1

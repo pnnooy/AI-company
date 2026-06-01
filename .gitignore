@@ -51,5 +51,28 @@ __pycache__/
 .venv/
 venv/
 
+# ===== Python (extended) =====
+*.egg-info/
+dist/
+.pytest_cache/
+.ruff_cache/
+
+# ===== PC Backend env =====
+pc_backend/.venv/
+pc_backend/venv/
+pc_backend/.env
+
+# ===== Web UI (Node) =====
+node_modules/
+dist/
+.env.local
+*.tsbuildinfo
+
+# ===== Large binary files (discuss: keep in git or use download links?) =====
+# 建议不入仓库，改用 README 中的下载链接
+# 硬件资料/*.pdf
+# 硬件资料/*.docx
+# 硬件资料/例程/
+
 # ===== OS =====
 .DS_Store

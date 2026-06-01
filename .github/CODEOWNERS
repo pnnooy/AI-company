@@ -1,0 +1,15 @@
+# 固件层
+firmware/Drivers/   @pnnooy
+firmware/App/       @pnnooy
+
+# TODO: 请根据实际人员分配修改以下内容
+# PC 端各模块 — 替换为对应同学的 GitHub 用户名
+# pc_backend/comm/     @p2-github-username
+# pc_backend/ai_engine/ @p3-github-username
+# pc_backend/camera/   @p4-github-username
+
+# 前端
+# web_ui/              @p5-github-username
+
+# 文档
+docs/               @pnnooy
