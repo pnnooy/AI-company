@@ -115,8 +115,48 @@ static void TextCmdHandler(const char *line) {
         UART_Printf("MPU polling ON\r\n");
     } else if (strcmp(line, "state") == 0) {
         UART_Printf("STATE: %s\r\n", FSM_StateString(FSM_GetState()));
+    } else if (strcmp(line, "nfc") == 0) {
+        uint8_t uid[10];
+        if (RC522_CheckCard()) {
+            uint8_t len = RC522_GetCardUID(uid);
+            if (len == 4) {
+                UART_Printf("NFC UID: %02X%02X%02X%02X\r\n",
+                            uid[0], uid[1], uid[2], uid[3]);
+            } else {
+                UART_Printf("NFC: UID read fail (len=%d)\r\n", len);
+            }
+        } else {
+            UART_Printf("NFC: No card\r\n");
+        }
+    } else if (strcmp(line, "nfcreset") == 0) {
+        /* Hard reset RC522: toggling RST pin + soft reset */
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
+        HAL_Delay(10);
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
+        HAL_Delay(50);
+        /* Soft reset */
+        RC522_WriteReg(0x01, 0x0F);  /* CommandReg = SoftReset */
+        HAL_Delay(50);
+        uint8_t v = RC522_ReadReg(0x37);
+        UART_Printf("RC522 after reset: Ver=0x%02X  CommReg=0x%02X  ComIrq=0x%02X\r\n",
+            v, RC522_ReadReg(0x01), RC522_ReadReg(0x04));
+    } else if (strcmp(line, "nfcdbg") == 0) {
+        /* Warm up SPI link — first byte after idle can glitch */
+        RC522_Wakeup();
+        /* First, check if SPI is alive by reading version */
+        uint8_t v = RC522_ReadReg(0x37);
+        UART_Printf("RC522 Ver: 0x%02X\r\n", v);
+        /* Dump key RC522 registers */
+        UART_Printf("  ComIrq=0x%02X  ComIEn=0x%02X  DivIrq=0x%02X\r\n",
+            RC522_ReadReg(0x04), RC522_ReadReg(0x02), RC522_ReadReg(0x05));
+        UART_Printf("  Error=0x%02X   FIFOLevel=0x%02X  Coll=0x%02X\r\n",
+            RC522_ReadReg(0x06), RC522_ReadReg(0x0A), RC522_ReadReg(0x0E));
+        UART_Printf("  BitFraming=0x%02X  TxControl=0x%02X  Mode=0x%02X\r\n",
+            RC522_ReadReg(0x0D), RC522_ReadReg(0x14), RC522_ReadReg(0x11));
+        UART_Printf("  CommReg=0x%02X  Status2=0x%02X\r\n",
+            RC522_ReadReg(0x01), RC522_ReadReg(0x08));
     } else if (strcmp(line, "help") == 0) {
-        UART_Printf("Commands: led R G B, mpu, mpuoff, mpuon, state, help\r\n");
+        UART_Printf("Commands: led R G B, mpu, mpuon, state, nfc, help\r\n");
     } else if (strlen(line) > 0) {
         UART_Printf("? '%s'\r\n", line);
     }
@@ -164,7 +204,12 @@ int main(void)
   UART_RegisterTextCallback(TextCmdHandler);
   Touch_Init();
   MPU6050_Init();
-  RC522_Init();
+  if (RC522_Init()) {
+    uint8_t ver = RC522_GetVersion();
+    UART_Printf("RC522 OK: SPI 2MHz, Ver=0x%02X\r\n", ver);
+  } else {
+    UART_Printf("RC522 FAIL: SPI unreliable or chip absent\r\n");
+  }
   FSM_Init();
 
   /* Boot blink: 3 quick blue flashes to confirm init complete */

@@ -108,7 +108,13 @@ void FSM_Tick(void) {
     /* NFC polling */
     if (now - last_nfc_tick >= NFC_POLL_MS) {
         last_nfc_tick = now;
-        if (RC522_CheckCard()) {
+        static uint8_t nfc_dbg_cnt = 0;
+        uint8_t card_ok = RC522_CheckCard();
+        if (++nfc_dbg_cnt >= 20) {  /* print once per second */
+            nfc_dbg_cnt = 0;
+            UART_Printf("[NFC DBG] poll: card=%d\r\n", card_ok);
+        }
+        if (card_ok) {
             uint8_t uid_len = RC522_GetCardUID(card_uid);
             if (uid_len == 4) {
                 last_interact_tick = now;
@@ -123,6 +129,8 @@ void FSM_Tick(void) {
 
                 UART_Printf("[NFC] Card UID: %02X%02X%02X%02X\r\n",
                             card_uid[0],card_uid[1],card_uid[2],card_uid[3]);
+            } else {
+                UART_Printf("[NFC] UID fail (len=%d)\r\n", uid_len);
             }
             RC522_HaltCard();
         }

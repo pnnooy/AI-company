@@ -19,7 +19,7 @@
 | 左触摸 | TTP223-A | EXTI | PC4 | ✅ |
 | 右触摸 | TTP223-B | EXTI | PC5 | ✅ |
 | 姿态 | MPU6050 | 软 I2C | PA11(SCL) PA12(SDA) | ✅ |
-| NFC | MFRC-522 | SPI1 | PA5(SCK) PA6(MISO) PA7(MOSI) PA4(CS) PA3(RST) | ⚠️ 驱动已写，待硬件接线测试 |
+| NFC | MFRC-522 | SPI1 | PA5(SCK) PA6(MISO) PA7(MOSI) PA4(CS) PA3(RST) | ⚠️ SPI稳定，读卡仍在调试 |
 
 > ⚠️ **重要**：FSMC NADV 与硬件 I2C1_SDA 共用 PB7，**不可使用硬件 I2C1**。MPU6050 已改用软件 I2C (PA11/PA12) 规避冲突。
 
@@ -115,6 +115,9 @@ AI-company/
 | `lcd R G B` | LCD 全屏填充纯色 | `lcd 255 0 0` |
 | `calib` | LCD 颜色诊断测试图案 | `calib` |
 | `state` | 查看当前状态机状态 | `state` |
+| `nfc` | 手动读卡（显示UID或失败原因） | `nfc` |
+| `nfcdbg` | 读取 MFRC522 全部寄存器 | `nfcdbg` |
+| `nfcreset` | 软复位 MFRC522 | `nfcreset` |
 | `help` | 列出所有命令 | `help` |
 
 表情名称：`normal`, `happy`, `focus`, `angry`, `sleep`, `surprise`, `sad`, `love`
@@ -131,7 +134,7 @@ AI-company/
 | MPU6050 | mpu6050_hal.c | ✅ 完成 | 软I2C, SHAKE+FALL检测 |
 | 软 I2C | soft_i2c.c | ✅ 完成 | PA11/PA12, 规避FSMC冲突 |
 | TTP223 触摸 | touch_sensor.c | ✅ 完成 | EXTI中断, TAP/HOLD/DOUBLE |
-| NFC RC522 | rc522_spi.c | ⚠️ 待测试 | SPI1驱动已写, 需接硬件验证 |
+| NFC RC522 | rc522_spi.c | ⚠️ 调试中 | SPI已稳定(2MHz), 读卡REQA失败待排查 |
 | 表情引擎 | expression_engine.c | ✅ 完成 | 8表情14帧, 动画轮播, 2x缩放 |
 | 主状态机 | main_fsm.c | ✅ 完成 | IDLE→ACTIVE→INTERACT→SLEEP→ALERT |
 
@@ -242,7 +245,7 @@ python tools/make_assets.py --size 80 --invert
 | CH340 自动下载 | 低 | 用 SSCOM 并关 DTR/RTS 可规避 |
 | 触摸 HOLD 阈值偏高 | 低 | 当前 1s，建议降至 700ms |
 | 触摸 DOUBLE 难以触发 | 低 | 需要两人同时触，实用性低 |
-| NFC 硬件未接 | 中 | 驱动代码已写好，待接线测试 |
+| NFC 读卡 REQA 失败 | 高 | SPI 链路已稳定(2MHz)，CheckCard 正常判卡，但 GetCardUID 的 REQA 始终返回 len=0，疑似 RF 发射/接收或 MFRC522 芯片硬件问题 |
 
 ## 开发管线
 
