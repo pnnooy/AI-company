@@ -36,7 +36,7 @@
 - TIM3: Partial Remap, CH2(PB5)/CH3(PB0)/CH4(PB1) PWM, Period=255, Prescaler=1999, OCPolarity=LOW
 - FSMC: NE1, 16bit, A23, LCD Interface
 - I2C1: **禁用** (与FSMC冲突)。用软I2C替代。
-- SPI1: Master, /8=9MHz, CPOL=Low, CPHA=1Edge, NSS=Soft
+- SPI1: Master, /32=2MHz (降频确保MFRC522稳定), CPOL=Low, CPHA=1Edge, NSS=Soft
 - 中断: EXTI4(PC4)+EXTI9_5(PC5), 优先级低于 SysTick
 - 禁止: 不使用 `HAL_Delay` 死延时, 统一用 `HAL_GetTick()` 非阻塞
 
@@ -46,6 +46,8 @@ CubeMX GENERATE CODE 会覆盖以下配置，每次生成后需手动修复:
 2. `main.c` SystemClock_Config: HSE→HSI
 3. `main.c` USER CODE 区域保留 (不会被覆盖, 但新增的需确认)
 4. `.uvprojx`: include路径和文件组需重新添加 (如用新工程)
+5. `gpio.c`: PA3(RST)和PA4(CS)引脚速度需设为 `GPIO_SPEED_FREQ_HIGH`
+6. `spi.c`: 波特率分频器需从 /8 改为 /32 (SPI降频至2MHz)，方法: 在 `RC522_Init()` 中通过 `CLEAR_BIT(SPI1->CR1, SPI_CR1_BR); SET_BIT(SPI1->CR1, SPI_BAUDRATEPRESCALER_32);` 手动修改
 
 ## 项目结构
 ```
