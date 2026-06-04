@@ -1,0 +1,867 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>桌面学术助手 · 控制面板</title>
+    <style>
+        /* ============================================================
+           Design System
+           Inspired by Linear · Vercel · Raycast · shadcn/ui
+           ============================================================ */
+
+        /* --- CSS Custom Properties --- */
+        :root {
+            --bg:            #141416;
+            --bg-card:       #1a1a1d;
+            --bg-hover:      #252528;
+            --bg-active:     #2a2a33;
+            --border:        #2a2a2e;
+            --border-light:  #34343a;
+            --text:          #f4f4f5;
+            --text-secondary:#a1a1a6;
+            --text-muted:    #5c5c63;
+            --accent:        #3b82f6;
+            --accent-dim:    #2563eb;
+            --accent-glow:   rgba(59,130,246,0.15);
+            --green:         #22c55e;
+            --green-glow:    rgba(34,197,94,0.3);
+            --red:           #ef4444;
+            --amber:         #f59e0b;
+            --radius:        10px;
+            --radius-sm:     6px;
+            --radius-lg:     14px;
+            --radius-xl:     18px;
+            --font-sans:     'Inter', 'SF Pro Display', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+            --font-mono:     'JetBrains Mono', 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+        }
+
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-sans);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex; justify-content: center;
+            padding: 40px 20px 60px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            line-height: 1.5;
+        }
+
+        ::-webkit-scrollbar { width: 3px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
+
+        /* --- Container --- */
+        .container { width: 100%; max-width: 640px; }
+
+        /* --- Header --- */
+        .header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 32px;
+        }
+        .brand { display: flex; align-items: center; gap: 14px; }
+        .brand-mark {
+            width: 40px; height: 40px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            display: flex; align-items: center; justify-content: center;
+            position: relative; overflow: hidden;
+        }
+        .brand-mark::after {
+            content: '';
+            position: absolute; inset: 0;
+            background: radial-gradient(ellipse at 35% 25%, rgba(59,130,246,0.08) 0%, transparent 60%);
+        }
+        .brand-mark svg { width: 20px; height: 20px; position: relative; z-index: 1; }
+        .brand-text h1 { font-size: 1rem; font-weight: 600; letter-spacing: -0.02em; }
+        .brand-text span { font-size: 0.72rem; color: var(--text-muted); font-weight: 450; }
+
+        .conn-pill {
+            display: flex; align-items: center; gap: 7px;
+            padding: 5px 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 100px;
+            font-size: 0.75rem; font-weight: 500;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+        }
+        .conn-pill .dot { width: 6px; height: 6px; border-radius: 50%; }
+        .conn-pill .dot.off { background: var(--red); }
+        .conn-pill .dot.on {
+            background: var(--green);
+            box-shadow: 0 0 8px var(--green-glow);
+        }
+        .conn-pill.live { border-color: rgba(34,197,94,0.2); color: var(--green); }
+
+        /* --- Cards --- */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            transition: border-color 0.2s ease;
+        }
+        .card:hover { border-color: var(--border-light); }
+
+        /* --- Section Label --- */
+        .sec-label {
+            font-size: 0.65rem; font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 0.1em;
+            margin: 28px 0 10px; padding-left: 4px;
+        }
+
+        /* --- Status Panel --- */
+        .status-layout { display: flex; gap: 28px; align-items: center; }
+
+        .face-display {
+            width: 150px; height: 150px; min-width: 150px;
+            background: #0d0d0f;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xl);
+            display: flex; align-items: center; justify-content: center;
+            position: relative; overflow: hidden;
+            transition: border-color 0.25s, box-shadow 0.25s;
+        }
+        .face-display::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: radial-gradient(ellipse at 50% 30%, rgba(255,255,255,0.02) 0%, transparent 65%);
+            pointer-events: none;
+        }
+        .face-display .face-char {
+            font-size: 3rem;
+            position: relative; z-index: 1;
+            filter: drop-shadow(0 0 12px rgba(255,255,255,0.06));
+        }
+        .face-display.flash {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .metrics { flex: 1; display: flex; flex-direction: column; gap: 0; }
+        .metric {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 9px 0;
+            border-bottom: 1px solid rgba(42,42,46,0.4);
+        }
+        .metric:last-child { border-bottom: none; }
+        .metric .key {
+            font-size: 0.7rem; font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 0.06em;
+        }
+        .metric .val {
+            font-family: var(--font-mono);
+            font-size: 0.82rem; font-weight: 500;
+            color: var(--text);
+            font-variant-numeric: tabular-nums;
+        }
+        .metric .val.accent { color: var(--accent); }
+
+        /* Emotion bar */
+        .emotion-block { margin-top: 4px; }
+        .emotion-head {
+            display: flex; justify-content: space-between;
+            font-size: 0.7rem; margin-bottom: 6px;
+        }
+        .emotion-head span:first-child {
+            color: var(--text-muted);
+            font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;
+        }
+        .emotion-head span:last-child {
+            color: var(--text-secondary);
+            font-family: var(--font-mono);
+            font-variant-numeric: tabular-nums;
+        }
+        .emotion-track {
+            height: 3px; background: var(--border);
+            border-radius: 2px; overflow: hidden;
+        }
+        .emotion-fill {
+            height: 100%; border-radius: 2px;
+            background: var(--accent);
+            transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* --- Expression Chips --- */
+        .chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+        .chip {
+            padding: 6px 15px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 100px;
+            color: var(--text-secondary);
+            font-size: 0.78rem; font-weight: 500;
+            font-family: var(--font-sans);
+            cursor: pointer; user-select: none;
+            transition: all 0.15s ease;
+            position: relative; overflow: hidden;
+        }
+        .chip::before {
+            content: ''; position: absolute; inset: 0;
+            background: var(--accent-glow); opacity: 0; transition: opacity 0.15s;
+        }
+        .chip:hover {
+            background: var(--bg-hover);
+            border-color: var(--border-light);
+            color: var(--text);
+        }
+        .chip:active { transform: scale(0.965); }
+        .chip.on {
+            border-color: rgba(59,130,246,0.35);
+            color: var(--accent);
+            background: rgba(59,130,246,0.08);
+        }
+        .chip.on::before { opacity: 1; }
+
+        /* --- RGB Sliders --- */
+        .rgb-group { display: flex; flex-direction: column; gap: 6px; }
+        .rgb-row { display: flex; align-items: center; gap: 14px; }
+        .rgb-dot {
+            width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+        }
+        .rgb-dot.r { background: #dc2626; }
+        .rgb-dot.g { background: #16a34a; }
+        .rgb-dot.b { background: var(--accent); }
+
+        .rgb-row input[type="range"] {
+            flex: 1;
+            -webkit-appearance: none; appearance: none;
+            height: 2px;
+            border-radius: 1px;
+            background: var(--border);
+            outline: none; cursor: pointer;
+        }
+        .rgb-row input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none;
+            width: 15px; height: 15px; border-radius: 50%;
+            background: var(--text);
+            border: 2px solid var(--bg-card);
+            box-shadow: 0 1px 6px rgba(0,0,0,0.5);
+            cursor: pointer;
+            transition: transform 0.1s ease;
+        }
+        .rgb-row input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.15); }
+        .rgb-row .val {
+            width: 26px; text-align: right;
+            font-family: var(--font-mono);
+            font-size: 0.72rem; color: var(--text-muted);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .rgb-footer {
+            display: flex; align-items: center; gap: 12px;
+            margin-top: 12px;
+        }
+        .rgb-preview {
+            width: 20px; height: 20px; border-radius: 50%;
+            border: 1px solid var(--border-light);
+            transition: background-color 0.1s;
+            flex-shrink: 0;
+        }
+        .rgb-label {
+            font-size: 0.65rem; color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 0.06em;
+            font-weight: 600;
+        }
+
+        .btn-row { display: flex; gap: 8px; margin-top: 14px; }
+        .btn {
+            padding: 7px 18px;
+            border: 1px solid var(--border);
+            border-radius: 100px;
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            font-size: 0.78rem; font-weight: 500;
+            font-family: var(--font-sans);
+            cursor: pointer; user-select: none;
+            transition: all 0.15s ease;
+        }
+        .btn:hover { background: var(--bg-hover); border-color: var(--border-light); color: var(--text); }
+        .btn:active { transform: scale(0.965); }
+        .btn.primary {
+            background: var(--text); border-color: var(--text);
+            color: #141416; font-weight: 550;
+        }
+        .btn.primary:hover { background: #e4e4e5; border-color: #e4e4e5; }
+        .btn.danger { color: var(--red); border-color: rgba(239,68,68,0.15); }
+        .btn.danger:hover { background: rgba(239,68,68,0.06); border-color: rgba(239,68,68,0.3); }
+
+        /* --- Event Log --- */
+        .log {
+            max-height: 260px; overflow-y: auto;
+            font-family: var(--font-mono); font-size: 0.72rem;
+            color: var(--text-secondary); line-height: 1.8;
+        }
+        .log .entry {
+            display: flex; gap: 10px;
+            padding: 2px 0;
+            border-bottom: 1px solid rgba(42,42,46,0.3);
+        }
+        .log .entry:last-child { border-bottom: none; }
+        .log .ts { color: var(--text-muted); flex-shrink: 0; font-variant-numeric: tabular-nums; }
+        .log .msg { color: var(--text-secondary); word-break: break-all; }
+        .log .empty { color: var(--text-muted); }
+
+        /* --- Toast --- */
+        .toast {
+            position: fixed; bottom: 32px; left: 50%;
+            transform: translateX(-50%) translateY(10px);
+            padding: 9px 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            border-radius: 100px;
+            font-size: 0.78rem; font-weight: 500;
+            color: var(--text);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+            opacity: 0; transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: none; z-index: 1000;
+        }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        /* --- Chat --- */
+        .chat-box {
+            display: flex; flex-direction: column;
+            height: 360px;
+        }
+        .chat-messages {
+            flex: 1; overflow-y: auto; padding-right: 4px;
+            display: flex; flex-direction: column; gap: 10px;
+            margin-bottom: 12px;
+        }
+        .chat-msg {
+            max-width: 85%;
+            padding: 8px 14px;
+            border-radius: var(--radius-lg);
+            font-size: 0.8rem; line-height: 1.55;
+            animation: msgIn 0.2s ease-out;
+        }
+        @keyframes msgIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .chat-msg.user {
+            align-self: flex-end;
+            background: var(--accent);
+            color: #fff;
+            border-bottom-right-radius: 4px;
+        }
+        .chat-msg.bot {
+            align-self: flex-start;
+            background: var(--bg-hover);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            border-bottom-left-radius: 4px;
+        }
+        .chat-msg.bot.thinking {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        .chat-input-row {
+            display: flex; gap: 8px;
+        }
+        .chat-input-row textarea {
+            flex: 1;
+            padding: 9px 14px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text);
+            font-family: var(--font-sans);
+            font-size: 0.8rem;
+            resize: none;
+            outline: none;
+            transition: border-color 0.15s;
+            line-height: 1.4;
+        }
+        .chat-input-row textarea:focus { border-color: var(--border-light); }
+        .chat-input-row textarea::placeholder { color: var(--text-muted); }
+        .chat-input-row .btn-send {
+            padding: 0 16px;
+            align-self: stretch;
+            border: 1px solid var(--accent);
+            border-radius: var(--radius);
+            background: var(--accent);
+            color: #fff;
+            font-size: 0.78rem; font-weight: 550;
+            font-family: var(--font-sans);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+        }
+        .chat-input-row .btn-send:hover { background: var(--accent-dim); border-color: var(--accent-dim); }
+        .chat-input-row .btn-send:active { transform: scale(0.96); }
+        .chat-input-row .btn-send:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .typing-dots { display: flex; gap: 4px; padding: 4px 0; }
+        .typing-dots span {
+            width: 5px; height: 5px; border-radius: 50%;
+            background: var(--text-muted);
+            animation: dotBounce 1.2s infinite ease-in-out;
+        }
+        .typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+        .typing-dots span:nth-child(3) { animation-delay: 0.3s; }
+        @keyframes dotBounce {
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.3; }
+            30% { transform: translateY(-6px); opacity: 1; }
+        }
+
+        /* --- Footer --- */
+        .footer {
+            text-align: center;
+            font-size: 0.65rem; color: var(--text-muted);
+            padding: 28px 0 0;
+            letter-spacing: 0.04em; font-weight: 450;
+        }
+
+        @media (max-width: 560px) {
+            body { padding: 24px 12px; }
+            .status-layout { flex-direction: column; align-items: stretch; }
+            .face-display { width: 100%; height: 120px; min-width: unset; }
+            .face-display .face-char { font-size: 2.2rem; }
+            .chip { font-size: 0.72rem; padding: 5px 10px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <header class="header">
+        <div class="brand">
+            <div class="brand-mark">
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="8" width="18" height="11" rx="2"/>
+                    <circle cx="12" cy="13" r="2.5"/>
+                    <circle cx="8" cy="9" r="1" fill="var(--accent)" stroke="none"/>
+                    <circle cx="16" cy="9" r="1" fill="var(--accent)" stroke="none"/>
+                    <line x1="12" y1="5" x2="12" y2="7.5"/>
+                </svg>
+            </div>
+            <div class="brand-text">
+                <h1>桌面学术助手</h1>
+                <span>桌面机器人 · 控制面板</span>
+            </div>
+        </div>
+        <div class="conn-pill" id="conn-pill">
+            <span class="dot off" id="conn-dot"></span>
+            <span id="conn-text">离线</span>
+        </div>
+    </header>
+
+    <!-- Status Card -->
+    <div class="card">
+        <div class="status-layout">
+            <div class="face-display" id="face-display">
+                <span class="face-char" id="face-char">—</span>
+            </div>
+            <div class="metrics">
+                <div class="metric">
+                    <span class="key">状态</span>
+                    <span class="val" id="info-state">—</span>
+                </div>
+                <div class="metric">
+                    <span class="key">表情</span>
+                    <span class="val" id="info-expr">—</span>
+                </div>
+                <div class="metric">
+                    <span class="key">灯光</span>
+                    <span class="val" id="info-rgb">—</span>
+                </div>
+                <div class="emotion-block">
+                    <div class="emotion-head">
+                        <span>情绪</span>
+                        <span id="info-emotion-val">—</span>
+                    </div>
+                    <div class="emotion-track">
+                        <div class="emotion-fill" id="emotion-fill" style="width:0%"></div>
+                    </div>
+                </div>
+                <div class="metric">
+                    <span class="key">最近事件</span>
+                    <span class="val" id="info-event" style="font-size:0.72rem;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">—</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 表情控制 -->
+    <div class="sec-label">表情控制</div>
+    <div class="card">
+        <div class="chip-row" id="expr-chips">
+            <button class="chip" data-expr="0">普通</button>
+            <button class="chip" data-expr="1">开心</button>
+            <button class="chip" data-expr="2">专注</button>
+            <button class="chip" data-expr="3">生气</button>
+            <button class="chip" data-expr="4">休眠</button>
+            <button class="chip" data-expr="5">惊讶</button>
+            <button class="chip" data-expr="6">难过</button>
+            <button class="chip" data-expr="7">爱心</button>
+        </div>
+    </div>
+
+    <!-- 灯光控制 -->
+    <div class="sec-label">灯光控制</div>
+    <div class="card">
+        <div class="rgb-group">
+            <div class="rgb-row">
+                <span class="rgb-dot r"></span>
+                <input type="range" id="slider-r" min="0" max="255" value="0">
+                <span class="val" id="val-r">0</span>
+            </div>
+            <div class="rgb-row">
+                <span class="rgb-dot g"></span>
+                <input type="range" id="slider-g" min="0" max="255" value="0">
+                <span class="val" id="val-g">0</span>
+            </div>
+            <div class="rgb-row">
+                <span class="rgb-dot b"></span>
+                <input type="range" id="slider-b" min="0" max="255" value="0">
+                <span class="val" id="val-b">0</span>
+            </div>
+        </div>
+        <div class="rgb-footer">
+            <span class="rgb-label">预览</span>
+            <div class="rgb-preview" id="rgb-preview" style="background:rgb(0,0,0)"></div>
+        </div>
+        <div class="btn-row">
+            <button class="btn primary" id="btn-apply">应用</button>
+            <button class="btn danger" id="btn-off">关灯</button>
+        </div>
+    </div>
+
+    <!-- Event Log -->
+    <div class="sec-label">事件日志</div>
+    <div class="card">
+        <div class="log" id="event-log">
+            <div class="empty">等待连接…</div>
+        </div>
+    </div>
+
+    <!-- 聊天 -->
+    <div class="sec-label">AI 对话</div>
+    <div class="card">
+        <div class="chat-box">
+            <div class="chat-messages" id="chat-msgs">
+                <div class="chat-msg bot">
+                    你好，我是桌面学术助手。<br>有什么可以帮你的？
+                </div>
+            </div>
+            <div class="chat-input-row">
+                <textarea id="chat-input" rows="1" placeholder="输入消息… (Enter 发送, Shift+Enter 换行)"></textarea>
+                <button class="btn-send" id="btn-send">发送</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">Task C · 桌面学术助手</div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+(function() {
+    'use strict';
+    var API = 'http://localhost:8000';
+
+    /* --- Face glyphs (minimalist) --- */
+    var FACE  = ['·_·', '^_^', 'o_o', '>_<', 'u_u', 'O_O', ';_;', '♥_♥'];
+    var NAMES = ['普通', '开心', '专注', '生气', '休眠', '惊讶', '难过', '爱心'];
+
+    /* --- DOM refs --- */
+    var connPill  = document.getElementById('conn-pill');
+    var connDot   = document.getElementById('conn-dot');
+    var connText  = document.getElementById('conn-text');
+    var faceDisp  = document.getElementById('face-display');
+    var faceChar  = document.getElementById('face-char');
+    var elState   = document.getElementById('info-state');
+    var elExpr    = document.getElementById('info-expr');
+    var elRgb     = document.getElementById('info-rgb');
+    var elEmoVal  = document.getElementById('info-emotion-val');
+    var elEmoFill = document.getElementById('emotion-fill');
+    var elEvent   = document.getElementById('info-event');
+    var elLog     = document.getElementById('event-log');
+    var sliderR   = document.getElementById('slider-r');
+    var sliderG   = document.getElementById('slider-g');
+    var sliderB   = document.getElementById('slider-b');
+    var valR      = document.getElementById('val-r');
+    var valG      = document.getElementById('val-g');
+    var valB      = document.getElementById('val-b');
+    var rgbPrev   = document.getElementById('rgb-preview');
+    var toast     = document.getElementById('toast');
+    var toastTimer;
+
+    function showToast(msg) {
+        toast.textContent = msg;
+        toast.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function() { toast.classList.remove('show'); }, 1800);
+    }
+
+    function fmtTime(ts) {
+        var d = new Date(ts * 1000);
+        return [d.getHours(), d.getMinutes(), d.getSeconds()]
+            .map(function(n) { return (n < 10 ? '0' : '') + n; }).join(':');
+    }
+
+    function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+    /* --- Connection --- */
+    var online = false;
+    function setOnline(on) {
+        if (on === online) return;
+        online = on;
+        if (on) {
+            connDot.className = 'dot on';
+            connText.textContent = '已连接';
+            connPill.classList.add('live');
+            showToast('已连接到后端');
+        } else {
+            connDot.className = 'dot off';
+            connText.textContent = '离线';
+            connPill.classList.remove('live');
+            showToast('连接断开');
+        }
+    }
+
+    /* --- API --- */
+    function fetchStatus() {
+        fetch(API + '/api/status')
+            .then(function(r) { if (!r.ok) throw Error(); return r.json(); })
+            .then(function(d) { setOnline(true); updateStatus(d); })
+            .catch(function() { setOnline(false); });
+    }
+
+    function fetchEvents() {
+        fetch(API + '/api/events?limit=40')
+            .then(function(r) { if (!r.ok) throw Error(); return r.json(); })
+            .then(function(events) {
+                if (!events || !events.length) return;
+                var h = '';
+                for (var i = events.length - 1; i >= 0; i--) {
+                    var e = events[i];
+                    var m = e.match(/^\[(\d+)\]\s+(.+)$/);
+                    var t = m ? fmtTime(+m[1]) : '';
+                    var msg = m ? m[2] : e;
+                    h += '<div class="entry">';
+                    if (t) h += '<span class="ts">' + t + '</span>';
+                    h += '<span class="msg">' + esc(msg) + '</span></div>';
+                }
+                elLog.innerHTML = h;
+            })
+            .catch(function() {});
+    }
+
+    function toastCmd(cmd) {
+        if (cmd === 'set_expression') return '切换表情';
+        if (cmd === 'set_rgb') return '设置灯光';
+        return cmd;
+    }
+
+    function sendCommand(cmd, value) {
+        fetch(API + '/api/command', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cmd: cmd, value: value })
+        })
+        .then(function(r) { if (!r.ok) throw Error(); })
+        .then(function() { showToast('已发送: ' + toastCmd(cmd)); })
+        .catch(function() { showToast('发送失败 — 后端不可达'); });
+    }
+
+    /* --- Status Update --- */
+    var lastExpr = -1;
+    var lastApiRgb = '0,0,0';
+    var dragging = false;
+
+    function updateStatus(d) {
+        var eid = d.expression_id | 0;
+        if (eid !== lastExpr) {
+            faceChar.textContent = FACE[eid] || '·_·';
+            faceDisp.classList.remove('flash');
+            void faceDisp.offsetWidth;
+            faceDisp.classList.add('flash');
+            setTimeout(function() { faceDisp.classList.remove('flash'); }, 350);
+            lastExpr = eid;
+        }
+        elState.textContent  = d.state || '—';
+        elExpr.textContent   = d.expression || '—';
+        elEvent.textContent  = d.last_event || '—';
+        elEmoVal.textContent = ((d.emotion || 0) * 100).toFixed(0) + '%';
+        elEmoFill.style.width = ((d.emotion || 0) * 100).toFixed(0) + '%';
+
+        var rgb = d.rgb || [0,0,0];
+        var key = rgb.join(',');
+        elRgb.textContent = rgb.map(function(v) { return (v < 10 ? '  ' : v < 100 ? ' ' : '') + v; }).join('  ');
+        if (!dragging && key !== lastApiRgb) {
+            lastApiRgb = key;
+            sliderR.value = rgb[0]; sliderG.value = rgb[1]; sliderB.value = rgb[2];
+            valR.textContent = rgb[0]; valG.textContent = rgb[1]; valB.textContent = rgb[2];
+            rgbPrev.style.backgroundColor = 'rgb(' + key + ')';
+        }
+
+        var chips = document.querySelectorAll('#expr-chips .chip');
+        for (var i = 0; i < chips.length; i++) {
+            chips[i].classList.toggle('on', +chips[i].dataset.expr === eid);
+        }
+    }
+
+    /* --- Bindings --- */
+    function bind() {
+        var chips = document.querySelectorAll('#expr-chips .chip');
+        chips.forEach(function(c) {
+            c.addEventListener('click', function() {
+                var id = +this.dataset.expr;
+                sendCommand('set_expression', id);
+                faceChar.textContent = FACE[id];
+                faceDisp.classList.remove('flash');
+                void faceDisp.offsetWidth;
+                faceDisp.classList.add('flash');
+                setTimeout(function() { faceDisp.classList.remove('flash'); }, 350);
+                chips.forEach(function(x) { x.classList.remove('on'); });
+                this.classList.add('on');
+            });
+        });
+
+        document.getElementById('btn-apply').addEventListener('click', function() {
+            var rgb = [+sliderR.value, +sliderG.value, +sliderB.value];
+            sendCommand('set_rgb', rgb);
+            rgbPrev.style.backgroundColor = 'rgb(' + rgb.join(',') + ')';
+        });
+
+        document.getElementById('btn-off').addEventListener('click', function() {
+            sendCommand('set_rgb', [0,0,0]);
+            sliderR.value = 0; sliderG.value = 0; sliderB.value = 0;
+            valR.textContent = '0'; valG.textContent = '0'; valB.textContent = '0';
+            rgbPrev.style.backgroundColor = 'rgb(0,0,0)';
+        });
+
+        ['r','g','b'].forEach(function(ch) {
+            var sl = document.getElementById('slider-' + ch);
+            var vl = document.getElementById('val-' + ch);
+            sl.addEventListener('input', function() {
+                vl.textContent = sl.value;
+                rgbPrev.style.backgroundColor =
+                    'rgb(' + sliderR.value + ',' + sliderG.value + ',' + sliderB.value + ')';
+            });
+            sl.addEventListener('mousedown', function() { dragging = true; });
+            sl.addEventListener('touchstart', function() { dragging = true; });
+        });
+        document.addEventListener('mouseup', function() { dragging = false; });
+        document.addEventListener('touchend', function() { dragging = false; });
+
+        /* Keyboard 1-8 for expressions */
+        document.addEventListener('keydown', function(e) {
+            if (e.key >= '1' && e.key <= '8' && !e.ctrlKey && !e.altKey && !e.metaKey) {
+                var el = document.activeElement;
+                if (!el || (el.tagName !== 'INPUT' && el.tagName !== 'TEXTAREA')) {
+                    var id = +e.key - 1;
+                    sendCommand('set_expression', id);
+                    showToast('切换: ' + NAMES[id]);
+                }
+            }
+        });
+    }
+
+    /* --- Chat --- */
+    var chatMsgs  = document.getElementById('chat-msgs');
+    var chatInput = document.getElementById('chat-input');
+    var btnSend   = document.getElementById('btn-send');
+    var chatApi   = API + '/api/chat';
+
+    function addMsg(role, text, cls) {
+        var div = document.createElement('div');
+        div.className = 'chat-msg ' + role + (cls ? ' ' + cls : '');
+        div.innerHTML = text;
+        chatMsgs.appendChild(div);
+        chatMsgs.scrollTop = chatMsgs.scrollHeight;
+        return div;
+    }
+
+    function showTyping() {
+        var div = document.createElement('div');
+        div.className = 'chat-msg bot thinking';
+        div.id = 'typing-indicator';
+        div.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+        chatMsgs.appendChild(div);
+        chatMsgs.scrollTop = chatMsgs.scrollHeight;
+        return div;
+    }
+
+    function hideTyping() {
+        var el = document.getElementById('typing-indicator');
+        if (el) el.remove();
+    }
+
+    function sendChat() {
+        var text = chatInput.value.trim();
+        if (!text) return;
+
+        // show user message
+        addMsg('user', esc(text));
+        chatInput.value = '';
+        chatInput.style.height = 'auto';
+        btnSend.disabled = true;
+        showTyping();
+
+        // try to reach backend chat API, fallback to local echo
+        fetch(chatApi, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: text })
+        })
+        .then(function(r) { if (!r.ok) throw Error(); return r.json(); })
+        .then(function(data) {
+            hideTyping();
+            addMsg('bot', esc(data.reply || data.text || '(空响应)'));
+            btnSend.disabled = false;
+        })
+        .catch(function() {
+            hideTyping();
+            // local fallback — mock AI response
+            var reply = generateReply(text);
+            addMsg('bot', reply);
+            btnSend.disabled = false;
+        });
+    }
+
+    function generateReply(text) {
+        var t = text.toLowerCase();
+        if (t.indexOf('你好') >= 0 || t.indexOf('hi') >= 0) return '你好！我是桌面学术助手，目前运行在本地模拟模式。<br><br>连接后端 AI 服务后可获得完整对话能力。';
+        if (t.indexOf('表情') >= 0 || t.indexOf('expression') >= 0) return '你可以通过控制面板的表情按钮切换 8 种表情：普通、开心、专注、生气、休眠、惊讶、难过、爱心。<br><br>也可以按键盘 1-8 快速切换。';
+        if (t.indexOf('灯') >= 0 || t.indexOf('rgb') >= 0 || t.indexOf('颜色') >= 0) return '灯光控制区支持独立调节 R / G / B 三个通道（0-255），点击「应用」发送到机器人。<br><br>也可以点击「关灯」一键熄灭。';
+        if (t.indexOf('状态') >= 0 || t.indexOf('state') >= 0) return '当前状态面板显示了机器人的实时运行信息：系统状态、表情、灯光值、情绪指数和最近事件。';
+        if (t.indexOf('帮助') >= 0 || t.indexOf('help') >= 0) return '可用功能：<br>• 表情切换 — 8 个表情按钮或快捷键 1-8<br>• 灯光调节 — R/G/B 滑条 + 应用/关灯<br>• 状态监控 — 实时轮询机器人状态<br>• 事件日志 — 查看历史事件<br>• AI 对话 — 就是你正在用的这个窗口';
+        if (t.indexOf('谢谢') >= 0 || t.indexOf('thanks') >= 0) return '不客气！随时为你服务。';
+        return '收到：「' + text + '」<br><br>这是一个本地模拟回复。连接后端 AI 服务（LLM API）后，这里会返回真正的智能回复。';
+    }
+
+    btnSend.addEventListener('click', sendChat);
+    chatInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendChat();
+        }
+    });
+    // auto-resize textarea
+    chatInput.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    });
+
+    bind();
+    setInterval(fetchStatus, 500);
+    setInterval(fetchEvents, 2000);
+    fetchStatus();
+    fetchEvents();
+})();
+</script>
+</body>
+</html>
