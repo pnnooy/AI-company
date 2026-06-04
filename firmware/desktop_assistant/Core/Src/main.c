@@ -113,20 +113,56 @@ static void TextCmdHandler(const char *line) {
     } else if (strcmp(line, "mpuon") == 0) {
         FSM_SetPoseEnable(1);
         UART_Printf("MPU polling ON\r\n");
+    } else if (strcmp(line, "nfcoff") == 0) {
+        FSM_SetNfcEnable(0);
+        UART_Printf("NFC polling OFF (manual test mode)\r\n");
+    } else if (strcmp(line, "nfcon") == 0) {
+        FSM_SetNfcEnable(1);
+        UART_Printf("NFC polling ON\r\n");
     } else if (strcmp(line, "state") == 0) {
         UART_Printf("STATE: %s\r\n", FSM_StateString(FSM_GetState()));
     } else if (strcmp(line, "nfc") == 0) {
         uint8_t uid[10];
+        UART_Printf("=== NFC Diagnostic ===\r\n");
+
+        /* Step 1: Check register health */
+        uint8_t mode = RC522_ReadReg(0x11);  /* ModeReg */
+        uint8_t txctl = RC522_ReadReg(0x14); /* TxControlReg */
+        UART_Printf("1. Chip state: Mode=0x%02X TxCtl=0x%02X ", mode, txctl);
+        if (mode == 0x3D && txctl == 0x83) {
+            UART_Printf("OK\r\n");
+        } else {
+            UART_Printf("BAD (expect 0x3D/0x83)\r\n");
+        }
+
+        /* Step 2: Check card presence */
+        UART_Printf("2. CheckCard: ");
         if (RC522_CheckCard()) {
+            UART_Printf("DETECTED\r\n");
+
+            /* Step 3: Try GetCardUID */
+            UART_Printf("3. GetCardUID: ");
             uint8_t len = RC522_GetCardUID(uid);
             if (len == 4) {
-                UART_Printf("NFC UID: %02X%02X%02X%02X\r\n",
+                UART_Printf("SUCCESS - UID: %02X%02X%02X%02X\r\n",
                             uid[0], uid[1], uid[2], uid[3]);
+            } else if (len == 0) {
+                UART_Printf("FAIL at REQA\r\n");
+                /* Show RF config */
+                uint8_t rfcfg = RC522_ReadReg(0x26);
+                uint8_t rxsel = RC522_ReadReg(0x17);
+                UART_Printf("   RFCfg=0x%02X RxSel=0x%02X (try 'nfcboost')\r\n", rfcfg, rxsel);
+            } else if (len == 1) {
+                UART_Printf("FAIL at Anticollision\r\n");
+            } else if (len == 2) {
+                UART_Printf("FAIL: wrong length\r\n");
+            } else if (len == 3) {
+                UART_Printf("FAIL: BCC error\r\n");
             } else {
-                UART_Printf("NFC: UID read fail (len=%d)\r\n", len);
+                UART_Printf("FAIL at Select\r\n");
             }
         } else {
-            UART_Printf("NFC: No card\r\n");
+            UART_Printf("NO CARD (move closer, < 3cm)\r\n");
         }
     } else if (strcmp(line, "nfcreset") == 0) {
         /* Hard reset RC522: toggling RST pin + soft reset */
@@ -155,8 +191,53 @@ static void TextCmdHandler(const char *line) {
             RC522_ReadReg(0x0D), RC522_ReadReg(0x14), RC522_ReadReg(0x11));
         UART_Printf("  CommReg=0x%02X  Status2=0x%02X\r\n",
             RC522_ReadReg(0x01), RC522_ReadReg(0x08));
+    } else if (strcmp(line, "nfcboost") == 0) {
+        /* Boost RF power for weak cards/antennas */
+        UART_Printf("Boosting RF power...\r\n");
+        RC522_WriteReg(0x26, 0x4F);  /* RFCfgReg: 25dB (was 18dB) */
+        UART_Printf("RFCfg=0x%02X (was 0x48)\r\n", RC522_ReadReg(0x26));
+        UART_Printf("Try 'nfc' again. If chip resets, power supply too weak.\r\n");
+    } else if (strcmp(line, "nfclow") == 0) {
+        /* Lower RF power to prevent reset on weak power */
+        UART_Printf("Lowering RF power...\r\n");
+        RC522_WriteReg(0x26, 0x40);  /* RFCfgReg: 13dB (lowest stable) */
+        UART_Printf("RFCfg=0x%02X (was 0x48)\r\n", RC522_ReadReg(0x26));
+        UART_Printf("Try 'nfc' again. Should be more stable.\r\n");
+    } else if (strcmp(line, "nfcraw") == 0) {
+        /* Raw RF test - check if we can receive ATQA */
+        UART_Printf("=== Raw REQA Test ===\r\n");
+        uint8_t cmd = 0x26;  /* REQA */
+        uint8_t back[16];
+        uint8_t backLen = 0;
+
+        /* Manual transceive with diagnostics */
+        RC522_WriteReg(0x0D, 0x07);  /* BitFraming: 7 bits in last byte */
+        RC522_WriteReg(0x01, 0x00);  /* Idle */
+        RC522_WriteReg(0x04, 0x7F);  /* Clear IRQ */
+        RC522_WriteReg(0x0A, 0x80);  /* Flush FIFO */
+        RC522_WriteReg(0x09, cmd);   /* Write REQA to FIFO */
+        RC522_WriteReg(0x01, 0x0C);  /* Transceive */
+        RC522_WriteReg(0x0D, 0x87);  /* StartSend */
+
+        HAL_Delay(10);  /* Wait for response */
+
+        uint8_t irq = RC522_ReadReg(0x04);    /* ComIrqReg */
+        uint8_t err = RC522_ReadReg(0x06);    /* ErrorReg */
+        uint8_t fifo = RC522_ReadReg(0x0A);   /* FIFOLevel */
+
+        UART_Printf("IRQ=0x%02X Err=0x%02X FIFO=%d bytes\r\n", irq, err, fifo);
+
+        if (fifo > 0) {
+            UART_Printf("RX Data: ");
+            for (int i = 0; i < fifo && i < 16; i++) {
+                UART_Printf("%02X ", RC522_ReadReg(0x09));
+            }
+            UART_Printf("\r\n");
+        }
+
+        RC522_WriteReg(0x01, 0x00);  /* Back to idle */
     } else if (strcmp(line, "help") == 0) {
-        UART_Printf("Commands: led R G B, mpu, mpuon, state, nfc, help\r\n");
+        UART_Printf("Commands: led R G B, mpu, mpuon, mpuoff, nfc, nfcoff, nfcon, nfcboost, nfclow, nfcraw, nfcdbg, nfcreset, state, help\r\n");
     } else if (strlen(line) > 0) {
         UART_Printf("? '%s'\r\n", line);
     }
