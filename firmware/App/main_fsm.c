@@ -26,6 +26,7 @@
 
 static SystemState current_state;
 static uint8_t     pose_enabled = 1;    /* MPU6050 polling on by default */
+static uint8_t     nfc_enabled = 1;     /* NFC polling on by default */
 static uint32_t    last_touch_tick;
 static uint32_t    last_nfc_tick;
 static uint32_t    last_mpu_tick;
@@ -105,35 +106,55 @@ void FSM_Tick(void) {
         }
     }
 
-    /* NFC polling */
-    if (now - last_nfc_tick >= NFC_POLL_MS) {
+    /* NFC polling - Simplified feeding mode (any card = food, duration = amount) */
+    if (nfc_enabled && now - last_nfc_tick >= NFC_POLL_MS) {
         last_nfc_tick = now;
-        static uint8_t nfc_dbg_cnt = 0;
-        uint8_t card_ok = RC522_CheckCard();
-        if (++nfc_dbg_cnt >= 20) {  /* print once per second */
-            nfc_dbg_cnt = 0;
-            UART_Printf("[NFC DBG] poll: card=%d\r\n", card_ok);
-        }
-        if (card_ok) {
-            uint8_t uid_len = RC522_GetCardUID(card_uid);
-            if (uid_len == 4) {
-                last_interact_tick = now;
+        static uint8_t  card_present_last = 0;
+        static uint32_t feeding_start_time = 0;
+        uint8_t card_present = RC522_CheckCard();
 
-                if (current_state == SYS_SLEEP) {
-                    FSM_ChangeState(SYS_IDLE);
-                } else {
-                    FSM_ChangeState(SYS_INTERACT);
-                    Expression_Set(EMO_FOCUS);
-                    RGB_Breathe(0, 0, 255, 3000);  /* blue breathing */
-                }
+        /* Card just placed (edge detection) */
+        if (card_present && !card_present_last) {
+            feeding_start_time = now;
+            last_interact_tick = now;
 
-                UART_Printf("[NFC] Card UID: %02X%02X%02X%02X\r\n",
-                            card_uid[0],card_uid[1],card_uid[2],card_uid[3]);
+            if (current_state == SYS_SLEEP) {
+                FSM_ChangeState(SYS_IDLE);
             } else {
-                UART_Printf("[NFC] UID fail (len=%d)\r\n", uid_len);
+                FSM_ChangeState(SYS_INTERACT);
             }
-            RC522_HaltCard();
+
+            Expression_Set(EMO_FOCUS);
+            RGB_Breathe(0, 128, 255, 2000);  /* cyan breathing - feeding mode */
+            UART_Printf("[NFC] Feeding started...\r\n");
         }
+
+        /* Card removed (edge detection) */
+        if (!card_present && card_present_last) {
+            uint32_t feeding_duration_ms = now - feeding_start_time;
+            uint32_t feeding_seconds = feeding_duration_ms / 1000;
+
+            /* Feedback based on feeding duration */
+            if (feeding_seconds < 3) {
+                UART_Printf("[NFC] Quick tap (%lus) - Hello!\r\n", feeding_seconds);
+                Expression_Set(EMO_NORMAL);
+                RGB_SetColor(0, 255, 255);  /* cyan flash */
+            } else if (feeding_seconds < 10) {
+                UART_Printf("[NFC] Snack (%lus) - Yummy!\r\n", feeding_seconds);
+                Expression_Set(EMO_HAPPY);
+                RGB_Breathe(255, 200, 0, 2000);  /* warm yellow */
+            } else if (feeding_seconds < 30) {
+                UART_Printf("[NFC] Meal (%lus) - So good!\r\n", feeding_seconds);
+                Expression_Set(EMO_LOVE);
+                RGB_Breathe(255, 100, 200, 2000);  /* pink */
+            } else {
+                UART_Printf("[NFC] Feast (%lus) - Amazing!\r\n", feeding_seconds);
+                Expression_Set(EMO_SURPRISE);
+                RGB_SetColor(255, 0, 255);  /* magenta flash */
+            }
+        }
+
+        card_present_last = card_present;
     }
 
     /* MPU6050 polling */
@@ -208,4 +229,8 @@ const char* FSM_StateString(SystemState s) {
 
 void FSM_SetPoseEnable(uint8_t en) {
     pose_enabled = en;
+}
+
+void FSM_SetNfcEnable(uint8_t en) {
+    nfc_enabled = en;
 }

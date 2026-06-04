@@ -141,6 +141,10 @@ static void RC522_HardReset(void) {
        RxSelReg = 0x84 (default)        — max gain (0x7F / 48 dB)
        caused TemperatureErr and spontaneous reset under 48 % TX duty cycle */
 
+    /* Reduce RF power to prevent spontaneous reset on weak power supply */
+    RC522_WriteReg(RFCfgReg, 0x48);   /* 18 dB - conservative, stable */
+    RC522_WriteReg(RxSelReg, 0x84);   /* default Rx gain */
+
     /* Antenna on */
     AntennaOn();
 }
