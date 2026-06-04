@@ -70,6 +70,46 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+/* PC binary command handler (new protocol) */
+static void PcCmdHandler(uint8_t cmd, const uint8_t *payload, uint8_t len) {
+    switch (cmd) {
+    case UART_CMD_SET_EXPR:
+        if (len >= 1 && payload[0] < 8) {
+            Expression_Set((Expression)payload[0]);
+            UART_Printf("[PC CMD] Set expression: %d\r\n", payload[0]);
+        }
+        break;
+
+    case UART_CMD_SET_RGB:
+        if (len >= 3) {
+            RGB_StopEffect();
+            RGB_SetColor(payload[0], payload[1], payload[2]);
+            UART_Printf("[PC CMD] Set RGB: (%d,%d,%d)\r\n", payload[0], payload[1], payload[2]);
+        }
+        break;
+
+    case UART_CMD_QUERY:
+        /* TODO: Send system status */
+        UART_Printf("[PC CMD] Query status\r\n");
+        break;
+
+    case UART_CMD_HEARTBEAT:
+        if (len >= 1) {
+            /* Echo back with ACK */
+            uint8_t ack_payload[2] = {UART_CMD_HEARTBEAT, 0x00};
+            UART_SendPacket(UART_EVT_ACK, ack_payload, 2);
+            UART_Printf("[PC CMD] Heartbeat seq=%d\r\n", payload[0]);
+        }
+        break;
+
+    default:
+        UART_Printf("[PC CMD] Unknown: 0x%02X\r\n", cmd);
+        break;
+    }
+}
+
+/* Text command handler (serial console) */
 static void TextCmdHandler(const char *line) {
     if (strncmp(line, "led ", 4) == 0) {
         int r, g, b;
@@ -236,8 +276,16 @@ static void TextCmdHandler(const char *line) {
         }
 
         RC522_WriteReg(0x01, 0x00);  /* Back to idle */
+    } else if (strcmp(line, "uartstats") == 0) {
+        /* Display UART protocol error statistics */
+        UART_ErrorStats* stats = UART_GetErrorStats();
+        UART_Printf("=== UART Error Statistics ===\r\n");
+        UART_Printf("Invalid LEN:  %lu\r\n", stats->invalid_len);
+        UART_Printf("CRC fail:     %lu\r\n", stats->crc_fail);
+        UART_Printf("END byte err: %lu\r\n", stats->end_byte_err);
+        UART_Printf("Timeout:      %lu\r\n", stats->timeout);
     } else if (strcmp(line, "help") == 0) {
-        UART_Printf("Commands: led R G B, mpu, mpuon, mpuoff, nfc, nfcoff, nfcon, nfcboost, nfclow, nfcraw, nfcdbg, nfcreset, state, help\r\n");
+        UART_Printf("Commands: led R G B, mpu, mpuon, mpuoff, nfc, nfcoff, nfcon, nfcboost, nfclow, nfcraw, nfcdbg, nfcreset, uartstats, state, help\r\n");
     } else if (strlen(line) > 0) {
         UART_Printf("? '%s'\r\n", line);
     }
@@ -282,7 +330,8 @@ int main(void)
   ILI9341_Init();
   RGB_Init();
   UART_Init();
-  UART_RegisterTextCallback(TextCmdHandler);
+  UART_RegisterCallback(PcCmdHandler);      /* Binary protocol handler */
+  UART_RegisterTextCallback(TextCmdHandler); /* Text command handler */
   Touch_Init();
   MPU6050_Init();
   if (RC522_Init()) {
