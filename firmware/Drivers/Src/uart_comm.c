@@ -11,6 +11,9 @@ static uint8_t rx_byte;  /* 1-byte buffer for interrupt receive */
 static UART_CmdCallback cmd_callback;
 static UART_TextCallback text_callback;
 
+/* ---- Error statistics ---- */
+static UART_ErrorStats uart_err_stats = {0, 0, 0, 0};
+
 /* ---- line buffer for text commands ---- */
 static char line_buf[64];
 static uint8_t line_idx;
@@ -40,10 +43,18 @@ static int ring_get(uint8_t *b) {
     return 1;
 }
 
-/* ---- CRC ---- */
-static uint8_t calc_crc(uint8_t cmd, uint8_t len, const uint8_t *payload) {
-    uint8_t crc = cmd ^ len;
-    for (uint8_t i = 0; i < len; i++) crc ^= payload[i];
+/* ---- CRC-8 (polynomial 0x07) ---- */
+static uint8_t calc_crc8(const uint8_t *data, uint8_t len) {
+    uint8_t crc = 0x00;
+    for (uint8_t i = 0; i < len; i++) {
+        crc ^= data[i];
+        for (uint8_t j = 0; j < 8; j++) {
+            if (crc & 0x80)
+                crc = (crc << 1) ^ 0x07;
+            else
+                crc <<= 1;
+        }
+    }
     return crc;
 }
 
@@ -81,48 +92,117 @@ void UART_ProcessByte(uint8_t byte) {
 }
 
 void UART_SendPacket(uint8_t cmd, const uint8_t *payload, uint8_t len) {
-    uint8_t buf[36];
-    buf[0] = UART_SYNC_BYTE;
-    buf[1] = cmd;
-    buf[2] = len;
-    if (len > 0 && payload) memcpy(buf + 3, payload, len);
-    buf[3 + len] = calc_crc(cmd, len, payload);
-    HAL_UART_Transmit(&huart1, buf, 4 + len, 100);
+    /* New format: [A5][5A][LEN][CMD][PAYLOAD...][CRC8][EE] */
+    uint8_t buf[38];  /* max: 2(sync) + 1(len) + 1(cmd) + 32(data) + 1(crc) + 1(end) = 38 */
+    uint8_t body_buf[34];  /* CMD + PAYLOAD for CRC calculation */
+
+    buf[0] = UART_SYNC0_BYTE;   /* 0xA5 */
+    buf[1] = UART_SYNC1_BYTE;   /* 0x5A */
+    buf[2] = 1 + len;            /* LEN = CMD(1) + payload */
+
+    /* Build body for CRC */
+    body_buf[0] = cmd;
+    if (len > 0 && payload) {
+        memcpy(body_buf + 1, payload, len);
+    }
+
+    /* Copy body to frame */
+    memcpy(buf + 3, body_buf, 1 + len);
+
+    /* Calculate CRC-8 over body */
+    buf[3 + 1 + len] = calc_crc8(body_buf, 1 + len);
+
+    /* End byte */
+    buf[4 + 1 + len] = UART_END_BYTE;  /* 0xEE */
+
+    HAL_UART_Transmit(&huart1, buf, 6 + len, 100);
 }
 
 void UART_SendEvent(uint8_t event_id, const uint8_t *payload, uint8_t len) {
     UART_SendPacket(event_id, payload, len);
 }
 
+UART_ErrorStats* UART_GetErrorStats(void) {
+    return &uart_err_stats;
+}
+
 void UART_ParseFrames(void) {
-    static enum { WAIT_SYNC, GET_CMD, GET_LEN, GET_DATA, GET_CRC } state = WAIT_SYNC;
-    static uint8_t pkt_cmd, pkt_len, pkt_idx;
-    static uint8_t pkt_payload[UART_MAX_PAYLOAD];
+    static enum { WAIT_SYNC0, WAIT_SYNC1, GET_LEN, GET_BODY, GET_END } state = WAIT_SYNC0;
+    static uint8_t pkt_len, pkt_idx;
+    static uint8_t pkt_buf[34];  /* CMD(1) + DATA(32) + CRC(1) = 34 max */
+    static uint32_t last_byte_tick = 0;
+
+    uint32_t now = HAL_GetTick();
+
+    /* Timeout detection (except WAIT_SYNC0) */
+    if (state != WAIT_SYNC0 && (now - last_byte_tick) > UART_FRAME_TIMEOUT_MS) {
+        state = WAIT_SYNC0;
+        uart_err_stats.timeout++;
+    }
 
     uint8_t b;
     while (ring_get(&b)) {
+        last_byte_tick = now;
+
         switch (state) {
-        case WAIT_SYNC:
-            if (b == UART_SYNC_BYTE) state = GET_CMD;
+        case WAIT_SYNC0:
+            if (b == UART_SYNC0_BYTE) state = WAIT_SYNC1;
             break;
-        case GET_CMD:
-            pkt_cmd = b;
-            state = GET_LEN;
-            break;
-        case GET_LEN:
-            pkt_len = (b > UART_MAX_PAYLOAD) ? 0 : b;
-            pkt_idx = 0;
-            state = (pkt_len > 0) ? GET_DATA : GET_CRC;
-            break;
-        case GET_DATA:
-            pkt_payload[pkt_idx++] = b;
-            if (pkt_idx >= pkt_len) state = GET_CRC;
-            break;
-        case GET_CRC:
-            if (b == calc_crc(pkt_cmd, pkt_len, pkt_payload)) {
-                if (cmd_callback) cmd_callback(pkt_cmd, pkt_payload, pkt_len);
+
+        case WAIT_SYNC1:
+            if (b == UART_SYNC1_BYTE) {
+                state = GET_LEN;
+            } else if (b == UART_SYNC0_BYTE) {
+                /* Consecutive 0xA5, stay in WAIT_SYNC1 */
+                state = WAIT_SYNC1;
+            } else {
+                state = WAIT_SYNC0;
             }
-            state = WAIT_SYNC;
+            break;
+
+        case GET_LEN:
+            /* LEN must be in range [1, 33] */
+            if (b == 0 || b > 33) {
+                uart_err_stats.invalid_len++;
+                state = WAIT_SYNC0;
+                break;
+            }
+            pkt_len = b;
+            pkt_idx = 0;
+            state = GET_BODY;
+            break;
+
+        case GET_BODY:
+            pkt_buf[pkt_idx++] = b;
+            if (pkt_idx >= pkt_len) state = GET_END;
+            break;
+
+        case GET_END:
+            if (b == UART_END_BYTE) {
+                /* pkt_buf = [CMD][DATA...][CRC] */
+                uint8_t data_len = pkt_len - 1;  /* exclude CRC */
+                uint8_t crc_received = pkt_buf[data_len];
+                uint8_t crc_expected = calc_crc8(pkt_buf, data_len);
+
+                if (crc_received == crc_expected) {
+                    uint8_t cmd = pkt_buf[0];
+                    /* Command direction filter: only accept PC→MCU (0x01~0x04) */
+                    if (cmd >= 0x01 && cmd <= 0x04) {
+                        if (cmd_callback) {
+                            cmd_callback(cmd, pkt_buf + 1, data_len - 1);
+                        }
+                    }
+                } else {
+                    uart_err_stats.crc_fail++;
+                }
+            } else {
+                uart_err_stats.end_byte_err++;
+            }
+            state = WAIT_SYNC0;
+            break;
+
+        default:
+            state = WAIT_SYNC0;
             break;
         }
     }

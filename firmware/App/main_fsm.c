@@ -101,6 +101,11 @@ void FSM_Tick(void) {
                 RGB_Breathe(255, 128, 0, 2000);  /* warm orange breathing */
             }
 
+            /* Send touch event to PC (binary protocol) */
+            uint8_t touch_payload[2] = { touch.side, touch.event };
+            UART_SendPacket(UART_EVT_TOUCH, touch_payload, 2);
+
+            /* Debug log (optional, can be removed in production) */
             UART_Printf("[TOUCH] %s %s\r\n",
                         side_names[touch.side], touch_evt_names[touch.event]);
         }
@@ -134,24 +139,41 @@ void FSM_Tick(void) {
             uint32_t feeding_duration_ms = now - feeding_start_time;
             uint32_t feeding_seconds = feeding_duration_ms / 1000;
 
-            /* Feedback based on feeding duration */
+            /* Determine feeding level */
+            uint8_t level;
+            const char* level_name;
+
             if (feeding_seconds < 3) {
-                UART_Printf("[NFC] Quick tap (%lus) - Hello!\r\n", feeding_seconds);
+                level = NFC_LEVEL_TAP;
+                level_name = "tap";
                 Expression_Set(EMO_NORMAL);
                 RGB_SetColor(0, 255, 255);  /* cyan flash */
             } else if (feeding_seconds < 10) {
-                UART_Printf("[NFC] Snack (%lus) - Yummy!\r\n", feeding_seconds);
+                level = NFC_LEVEL_SNACK;
+                level_name = "snack";
                 Expression_Set(EMO_HAPPY);
                 RGB_Breathe(255, 200, 0, 2000);  /* warm yellow */
             } else if (feeding_seconds < 30) {
-                UART_Printf("[NFC] Meal (%lus) - So good!\r\n", feeding_seconds);
+                level = NFC_LEVEL_MEAL;
+                level_name = "meal";
                 Expression_Set(EMO_LOVE);
                 RGB_Breathe(255, 100, 200, 2000);  /* pink */
             } else {
-                UART_Printf("[NFC] Feast (%lus) - Amazing!\r\n", feeding_seconds);
+                level = NFC_LEVEL_FEAST;
+                level_name = "feast";
                 Expression_Set(EMO_SURPRISE);
                 RGB_SetColor(255, 0, 255);  /* magenta flash */
             }
+
+            /* Send NFC feeding event to PC (new protocol) */
+            uint8_t nfc_payload[3];
+            nfc_payload[0] = feeding_seconds & 0xFF;        /* duration low byte */
+            nfc_payload[1] = (feeding_seconds >> 8) & 0xFF; /* duration high byte */
+            nfc_payload[2] = level;
+            UART_SendPacket(UART_EVT_NFC, nfc_payload, 3);
+
+            /* Debug log */
+            UART_Printf("[NFC] Feeding: %lus - %s (level=%d)\r\n", feeding_seconds, level_name, level);
         }
 
         card_present_last = card_present;
@@ -164,10 +186,22 @@ void FSM_Tick(void) {
             PoseState pose = MPU6050_DetectPose(&mpu_data);
             if (pose == POSE_FALL) {
                 FSM_ChangeState(SYS_ALERT);
+
+                /* Send pose event to PC (binary protocol) */
+                uint8_t pose_payload[1] = { 0x01 };  /* 0x01 = FALL */
+                UART_SendPacket(UART_EVT_POSE, pose_payload, 1);
+
+                /* Debug log */
                 UART_Printf("[POSE] FALL\r\n");
             } else if (pose == POSE_SHAKE) {
                 last_interact_tick = now;
                 if (current_state == SYS_SLEEP) FSM_ChangeState(SYS_IDLE);
+
+                /* Send pose event to PC (binary protocol) */
+                uint8_t pose_payload[1] = { 0x02 };  /* 0x02 = SHAKE */
+                UART_SendPacket(UART_EVT_POSE, pose_payload, 1);
+
+                /* Debug log */
                 UART_Printf("[POSE] SHAKE\r\n");
             }
         }
