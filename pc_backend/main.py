@@ -3,12 +3,17 @@ Desktop Academic Assistant Robot - PC Backend
 =============================================
 主入口：启动串口通信、AI 引擎、摄像头、Web API 服务。
 
-更新日期: 2026-06-09（修复审查发现的问题 3/4/5）
+更新日期: 2026-06-09（摄像头接入 + DeepFace 情绪识别）
 
 Usage:
     python main.py --port COM6 --baud 115200
     python main.py --port COM6 --no-camera --no-ui
 """
+
+import os
+# 抑制 TensorFlow oneDNN 日志刷屏
+os.environ.setdefault('TF_CPP_MIN_LOG_LEVEL', '2')
+os.environ.setdefault('TF_ENABLE_ONEDNN_OPTS', '0')
 
 import argparse
 import logging
@@ -25,6 +30,17 @@ from ai_engine.state_machine import MachineState
 from ai_engine.rules import (
     decide, decide_by_emotion, get_nfc_emotion_boost,
 )
+
+# 摄像头模块（可选）
+try:
+    from camera.face_detect import (
+        FaceDetector, CameraCapture,
+        draw_status_overlay, create_preview_window,
+        show_preview, destroy_preview,
+    )
+    HAS_CAMERA = True
+except ImportError:
+    HAS_CAMERA = False
 
 logger = logging.getLogger("main")
 
@@ -154,16 +170,36 @@ def on_uart_frame(frame: Frame, event_queue: queue.Queue):
 IDLE_EMOTION_UPDATE_MS = 5000   # 每 5 秒检查一次
 IDLE_EMOTION_CHANGE_THRESHOLD = 0.05  # 情绪变化超过此值才更新
 
+# 人脸检测参数
+FACE_DETECT_INTERVAL_MS = 1000   # 每 1 秒检测一次
+PREVIEW_REFRESH_MS = 33          # 预览窗口每 33ms 刷新（30fps）
+FACE_ABSENT_TIMEOUT_MS = 10000   # 10 秒无人脸 → 判定离开
+FACE_PRESENT_COUNT = 3           # 连续 3 次检测到 → 判定在场
 
-def run_main_loop(link: UartLink, fsm: MachineState, event_queue: queue.Queue):
+
+def run_main_loop(link: UartLink, fsm: MachineState, event_queue: queue.Queue,
+                 camera=None, face_detector=None, preview_window=None,
+                 emotion_recognizer=None):
     """主事件循环"""
     logger.info("主循环已启动，等待事件...")
     logger.info("按 Ctrl+C 退出")
 
     last_stats_time = time.time()
     last_emotion_update = time.time()
+    last_face_detect_time = 0.0
+    last_preview_time = 0.0
     last_emotion_value = fsm.emotion_value
-    had_events = False  # 上一轮是否有事件
+    had_events = False
+
+    # 人脸在场跟踪
+    face_present_count = 0           # 连续检测到人脸的次数
+    user_present = False             # 当前用户是否在场
+    last_face_seen_time = 0.0        # 最后一次看到人脸的时间
+    # 缓存的检测结果（供预览使用）
+    cached_faces = []
+    cached_frame = None
+    cached_user_emotion = "neutral"
+    cached_emotion_conf = 0.0
 
     try:
         while True:
@@ -179,10 +215,60 @@ def run_main_loop(link: UartLink, fsm: MachineState, event_queue: queue.Queue):
             except queue.Empty:
                 pass
 
+            # ── 摄像头预览刷新（高频：每 80ms ≈ 12fps）──
+            if (camera and preview_window
+                    and now - last_preview_time > PREVIEW_REFRESH_MS / 1000.0):
+                last_preview_time = now
+                frame = camera.read()
+                if frame is not None:
+                    cached_frame = frame
+                    # 用缓存的人脸数据画叠加层
+                    face_count = len(cached_faces)
+                    annotated = draw_status_overlay(
+                        frame, cached_faces, user_present, face_count,
+                        fsm.state.name, fsm.emotion_value,
+                        cached_user_emotion, cached_emotion_conf,
+                    )
+                    if not show_preview(preview_window, annotated):
+                        logger.info("预览窗口已关闭，按 Ctrl+C 退出")
+
+            # ── 人脸检测 + 情绪识别（低频：每 2 秒）──
+            if (camera and face_detector
+                    and now - last_face_detect_time > FACE_DETECT_INTERVAL_MS / 1000.0):
+                last_face_detect_time = now
+                frame = cached_frame if cached_frame is not None else camera.read()
+                if frame is not None:
+                    has_face, cached_faces = face_detector.detect_with_boxes(frame)
+                    face_count = len(cached_faces)
+
+                    if has_face:
+                        face_present_count += 1
+                        last_face_seen_time = now
+                        if not user_present and face_present_count >= FACE_PRESENT_COUNT:
+                            user_present = True
+                            logger.info("用户出现在摄像头前")
+                            _on_user_arrive(fsm, link, now_ms)
+
+                        # 用户情绪识别
+                        if emotion_recognizer and face_count > 0:
+                            rois = [frame[y:y+h, x:x+w] for (x, y, w, h) in cached_faces]
+                            results = emotion_recognizer.predict_all(rois)
+                            if results:
+                                cached_user_emotion, cached_emotion_conf = results[0]
+                                # 用户情绪影响机器人
+                                _on_user_emotion(fsm, link, now_ms,
+                                                 cached_user_emotion, cached_emotion_conf)
+                    else:
+                        face_present_count = 0
+                        if user_present and now - last_face_seen_time > FACE_ABSENT_TIMEOUT_MS / 1000.0:
+                            user_present = False
+                            logger.info("用户离开")
+                            _on_user_leave(fsm, link, now_ms)
+
             # 状态机 tick（情绪衰减 + 超时转移）
             fsm.tick(now_ms)
 
-            # 问题3修复：无事件时，情绪值驱动表情更新
+            # 空闲时情绪值驱动表情更新
             if (not had_events
                     and now - last_emotion_update > IDLE_EMOTION_UPDATE_MS / 1000.0
                     and abs(fsm.emotion_value - last_emotion_value) > IDLE_EMOTION_CHANGE_THRESHOLD):
@@ -209,6 +295,48 @@ def run_main_loop(link: UartLink, fsm: MachineState, event_queue: queue.Queue):
 
     except KeyboardInterrupt:
         logger.info("收到退出信号")
+
+
+def _on_user_arrive(fsm: MachineState, link: UartLink, now_ms: int):
+    """用户出现时的反应"""
+    # 从休眠唤醒
+    if fsm.state == fsm.state.SLEEP:
+        fsm.state = fsm.state.IDLE
+        logger.info("用户出现，从 SLEEP 唤醒")
+    # 开心一下
+    fsm.add_emotion(0.1, now_ms)
+    expr, rgb = decide_by_emotion(fsm.emotion_value)
+    _send_throttled(link, Cmd.SET_EXPR, bytes([int(expr)]))
+    _send_throttled(link, Cmd.SET_RGB, bytes(rgb))
+
+
+def _on_user_leave(fsm: MachineState, link: UartLink, now_ms: int):
+    """用户离开时的反应"""
+    fsm.last_event_time = now_ms  # 加速进入休眠
+
+
+def _on_user_emotion(fsm: MachineState, link: UartLink, now_ms: int,
+                     user_emotion: str, confidence: float):
+    """根据用户表情微调机器人情绪（仅在 >50% 置信度时生效）"""
+    if confidence < 0.5:
+        return
+
+    # 用户情绪 → 机器人情绪调节
+    boosts = {
+        "happy":     0.03,   # 用户开心 → 机器人也开心
+        "surprise":  0.02,
+        "sad":       -0.02,  # 用户难过 → 机器人稍微感同身受
+        "angry":     -0.03,
+        "fear":      -0.02,
+        "neutral":    0.0,
+    }
+    delta = boosts.get(user_emotion, 0.0)
+    if abs(delta) > 0:
+        fsm.add_emotion(delta, now_ms)
+        logger.debug(
+            f"用户情绪: {user_emotion} ({confidence:.0%}) → "
+            f"机器人情绪 {'+' if delta > 0 else ''}{delta:+.2f}"
+        )
 
 
 # ============================================================================
@@ -246,19 +374,27 @@ def main():
     logger.info(f"初始状态: {fsm.state.name}, 情绪值: {fsm.emotion_value:.2f}")
 
     # ── 4. 摄像头（可选）──
-    if not args.no_camera:
+    camera = None
+    face_detector = None
+    emotion_recognizer = None
+    preview_window = None
+    if not args.no_camera and HAS_CAMERA:
         try:
-            from camera.face_detect import FaceDetector, CameraCapture
+            from camera.face_detect import EmotionRecognizer
             camera = CameraCapture(device_id=0, width=640, height=480)
             if camera.open():
                 face_detector = FaceDetector()
-                logger.info("摄像头已启用")
+                emotion_recognizer = EmotionRecognizer()
+                preview_window = create_preview_window()
+                logger.info("摄像头已启用（预览窗口已打开）")
+                if emotion_recognizer.available:
+                    logger.info("用户情绪识别已启用")
             else:
                 logger.warning("摄像头打开失败，跳过")
-        except ImportError as e:
-            logger.warning(f"摄像头模块导入失败: {e}")
         except Exception as e:
             logger.warning(f"摄像头初始化失败: {e}")
+    elif not args.no_camera and not HAS_CAMERA:
+        logger.warning("opencv-python 未安装，摄像头不可用")
 
     # ── 5. Web API（可选）──
     if not args.no_ui:
@@ -270,9 +406,20 @@ def main():
             logger.warning(f"Web API 启动失败: {e}")
 
     # ── 6. 主循环 ──
-    run_main_loop(link, fsm, event_queue)
+    run_main_loop(link, fsm, event_queue, camera, face_detector, preview_window,
+                  emotion_recognizer)
 
     # ── 7. 清理 ──
+    try:
+        if preview_window:
+            destroy_preview(preview_window)
+    except NameError:
+        pass
+    try:
+        if camera:
+            camera.close()
+    except NameError:
+        pass
     link.close()
     logger.info("PC Backend 已退出")
 
