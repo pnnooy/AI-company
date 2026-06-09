@@ -41,14 +41,14 @@ OUTPUT_DIR = PROJECT / "firmware" / "App"
 DEFAULT_SIZE = 40
 
 EXPRESSIONS = {
-    "normal":    {"name": "EMO_NORMAL",    "frames": 0, "anim_ms": 0},
-    "happy":     {"name": "EMO_HAPPY",     "frames": 0, "anim_ms": 200},
-    "focus":     {"name": "EMO_FOCUS",     "frames": 0, "anim_ms": 500},
-    "angry":     {"name": "EMO_ANGRY",     "frames": 0, "anim_ms": 0},
-    "sleep":     {"name": "EMO_SLEEP",     "frames": 0, "anim_ms": 1000},
-    "surprise":  {"name": "EMO_SURPRISE",  "frames": 0, "anim_ms": 0},
-    "sad":       {"name": "EMO_SAD",       "frames": 0, "anim_ms": 400},
-    "love":      {"name": "EMO_LOVE",      "frames": 0, "anim_ms": 300},
+    "normal":    {"name": "EMO_NORMAL",    "frames": 3, "anim_ms": 300},
+    "happy":     {"name": "EMO_HAPPY",     "frames": 3, "anim_ms": 200},
+    "focus":     {"name": "EMO_FOCUS",     "frames": 3, "anim_ms": 500},
+    "angry":     {"name": "EMO_ANGRY",     "frames": 3, "anim_ms": 300},
+    "sleep":     {"name": "EMO_SLEEP",     "frames": 3, "anim_ms": 1000},
+    "surprise":  {"name": "EMO_SURPRISE",  "frames": 3, "anim_ms": 200},
+    "sad":       {"name": "EMO_SAD",       "frames": 3, "anim_ms": 400},
+    "love":      {"name": "EMO_LOVE",      "frames": 3, "anim_ms": 300},
 }
 
 
