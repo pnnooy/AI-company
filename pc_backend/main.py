@@ -31,6 +31,13 @@ from ai_engine.rules import (
     decide, decide_by_emotion, get_nfc_emotion_boost,
 )
 
+# LLM 模块（可选）
+try:
+    from ai_engine.llm_client import LLMClient
+    HAS_LLM = True
+except ImportError:
+    HAS_LLM = False
+
 # 摄像头模块（可选）
 try:
     from camera.face_detect import (
@@ -46,6 +53,15 @@ logger = logging.getLogger("main")
 
 # 全局引用
 _link: Optional[UartLink] = None
+_llm_client = None  # 供 _trigger_llm_react 使用
+# 全局缓存（供 web_api 摄像头帧端点读取）
+cached_frame = None
+cached_faces = []
+cached_user_emotion = "neutral"
+cached_emotion_conf = 0.0
+current_expression = "normal"  # 供 web_api 读取
+last_rgb = [0, 0, 0]           # 最近一次 RGB 值
+camera_jpeg = None             # 最新摄像头帧（JPEG bytes，供 web_api）
 
 # ============================================================================
 # 命令去重（问题5：防止事件洪泛导致重复发送）
@@ -74,6 +90,10 @@ def _send_throttled(link: UartLink, cmd: int, data: bytes,
         if now - _command_history[key] < cooldown_ms / 1000.0:
             return False
     _command_history[key] = now
+    # 同步 RGB 全局状态
+    global last_rgb
+    if cmd == Cmd.SET_RGB and len(data) >= 3:
+        last_rgb = list(data[:3])
     return link.send_command(cmd, data)
 
 
@@ -88,29 +108,62 @@ def _pose_debounced(pose_state: int) -> bool:
 
 
 # ============================================================================
+# 事件历史（供 LLM 上下文使用）
+# ============================================================================
+
+# 最近事件记录（最多保留 30 条）
+_event_history: list = []
+
+
+def _event_description(event: SensorEvent) -> str:
+    """将传感器事件转为 LLM 可读的文字描述"""
+    import datetime
+    ts = datetime.datetime.now().strftime("%H:%M:%S")
+    if event.event_code == EventCode.TOUCH and event.touch:
+        t = event.touch
+        side_name = "左边" if t.side.name == "LEFT" else "右边"
+        type_name = "轻触" if t.type.name == "TAP" else "长按" if t.type.name == "HOLD" else t.type.name
+        return f"[{ts}] 你{type_name}了皮皮的{side_name}"
+    elif event.event_code == EventCode.NFC and event.nfc:
+        n = event.nfc
+        level_name = {"TAP": "小零食", "SNACK": "加餐", "MEAL": "正餐", "FEAST": "大餐"}.get(n.level.name, n.level.name)
+        return f"[{ts}] 你喂了皮皮{n.duration}秒（{level_name}）"
+    elif event.event_code == EventCode.POSE and event.pose:
+        p = event.pose
+        if p.state.name == "SHAKE":
+            return f"[{ts}] 皮皮被摇晃了"
+        elif p.state.name == "FALL":
+            return f"[{ts}] 皮皮摔倒了"
+    elif event.event_code == EventCode.ACK:
+        return f"[{ts}] 设备确认"
+    return f"[{ts}] 未知事件"
+
+
+# ============================================================================
 # 事件处理
 # ============================================================================
 
-def handle_sensor_event(event: SensorEvent, fsm: MachineState, link: UartLink):
+def handle_sensor_event(event: SensorEvent, fsm: MachineState, link: UartLink) -> str:
     """
     处理传感器事件：状态转移 → 规则决策 → 下发命令（带去重）
 
-    Args:
-        event: 解析后的传感器事件
-        fsm: 情绪状态机
-        link: 串口链路
+    Returns:
+        设置的表情名称（"normal", "happy" 等）
     """
     now_ms = int(time.time() * 1000)
+    expression = None  # 最终设置的表情
 
     if event.event_code == EventCode.TOUCH and event.touch:
         touch = event.touch
         logger.info(f"触摸事件: {touch.side.name} {touch.type.name}")
 
         fsm.on_touch_event(now_ms)
+        _event_history.append(_event_description(event))
 
         result = decide(event, fsm.emotion_value)
         if result:
             expr, rgb, _ = result
+            expression = expr.name.lower()
             _send_throttled(link, Cmd.SET_EXPR, bytes([int(expr)]))
             _send_throttled(link, Cmd.SET_RGB, bytes(rgb))
 
@@ -121,10 +174,16 @@ def handle_sensor_event(event: SensorEvent, fsm: MachineState, link: UartLink):
 
         # 问题4修复：emotion_boost 传入状态机，不需单独调 add_emotion
         fsm.on_nfc_event(now_ms, boost)
+        _event_history.append(_event_description(event))
+
+        # SNACK+ 等级触发 LLM 即时反应
+        if nfc.level.value >= 1:  # SNACK 或更高
+            _trigger_llm_react(f"你刚刚喂了皮皮 {nfc.duration} 秒（{nfc.level.name}）！")
 
         result = decide(event, fsm.emotion_value)
         if result:
             expr, rgb, _ = result
+            expression = expr.name.lower()
             _send_throttled(link, Cmd.SET_EXPR, bytes([int(expr)]))
             _send_throttled(link, Cmd.SET_RGB, bytes(rgb))
 
@@ -137,20 +196,25 @@ def handle_sensor_event(event: SensorEvent, fsm: MachineState, link: UartLink):
             return
 
         logger.info(f"姿态事件: {pose.state.name}")
+        _event_history.append(_event_description(event))
 
         if pose.state == PoseState.FALL:
             fsm.on_alert_event(now_ms)
+            _trigger_llm_react("皮皮刚刚摔倒了！")
         elif pose.state == PoseState.SHAKE:
             fsm.on_shake_event(now_ms)
 
         result = decide(event, fsm.emotion_value)
         if result:
             expr, rgb, _ = result
+            expression = expr.name.lower()
             _send_throttled(link, Cmd.SET_EXPR, bytes([int(expr)]))
             _send_throttled(link, Cmd.SET_RGB, bytes(rgb))
 
     elif event.event_code == EventCode.ACK and event.ack:
         logger.debug(f"ACK: cmd=0x{event.ack.ack_cmd:02X}, status={event.ack.status}")
+
+    return expression if expression else "normal"
 
 
 def on_uart_frame(frame: Frame, event_queue: queue.Queue):
@@ -173,13 +237,13 @@ IDLE_EMOTION_CHANGE_THRESHOLD = 0.05  # 情绪变化超过此值才更新
 # 人脸检测参数
 FACE_DETECT_INTERVAL_MS = 1000   # 每 1 秒检测一次
 PREVIEW_REFRESH_MS = 33          # 预览窗口每 33ms 刷新（30fps）
-FACE_ABSENT_TIMEOUT_MS = 10000   # 10 秒无人脸 → 判定离开
+FACE_ABSENT_TIMEOUT_MS = 45000   # 45 秒无人脸 → 判定离开（避免短暂误检）
 FACE_PRESENT_COUNT = 3           # 连续 3 次检测到 → 判定在场
 
 
 def run_main_loop(link: UartLink, fsm: MachineState, event_queue: queue.Queue,
                  camera=None, face_detector=None, preview_window=None,
-                 emotion_recognizer=None):
+                 emotion_recognizer=None, llm_client=None):
     """主事件循环"""
     logger.info("主循环已启动，等待事件...")
     logger.info("按 Ctrl+C 退出")
@@ -195,11 +259,13 @@ def run_main_loop(link: UartLink, fsm: MachineState, event_queue: queue.Queue,
     face_present_count = 0           # 连续检测到人脸的次数
     user_present = False             # 当前用户是否在场
     last_face_seen_time = 0.0        # 最后一次看到人脸的时间
-    # 缓存的检测结果（供预览使用）
-    cached_faces = []
-    cached_frame = None
-    cached_user_emotion = "neutral"
-    cached_emotion_conf = 0.0
+    # 使用模块级全局缓存
+    global cached_frame, cached_faces, cached_user_emotion, cached_emotion_conf, current_expression, camera_jpeg
+
+    # LLM 相关
+    current_expression = "normal"
+    last_llm_reflect_time = 0.0
+    last_llm_result_check = 0.0
 
     try:
         while True:
@@ -210,7 +276,9 @@ def run_main_loop(link: UartLink, fsm: MachineState, event_queue: queue.Queue,
             try:
                 while True:
                     event = event_queue.get_nowait()
-                    handle_sensor_event(event, fsm, link)
+                    expr = handle_sensor_event(event, fsm, link)
+                    if expr != "normal" or not had_events:
+                        current_expression = expr
                     had_events = True
             except queue.Empty:
                 pass
@@ -222,6 +290,13 @@ def run_main_loop(link: UartLink, fsm: MachineState, event_queue: queue.Queue,
                 frame = camera.read()
                 if frame is not None:
                     cached_frame = frame
+                    # 编码 JPEG 供 web_api
+                    try:
+                        import cv2
+                        _, jpg = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 60])
+                        camera_jpeg = jpg.tobytes()
+                    except:
+                        pass
                     # 用缓存的人脸数据画叠加层
                     face_count = len(cached_faces)
                     annotated = draw_status_overlay(
@@ -268,6 +343,45 @@ def run_main_loop(link: UartLink, fsm: MachineState, event_queue: queue.Queue,
             # 状态机 tick（情绪衰减 + 超时转移）
             fsm.tick(now_ms)
 
+            # ── LLM 反思（每 6s）──
+            if (llm_client and llm_client.available
+                    and now - last_llm_reflect_time > 6):
+                last_llm_reflect_time = now
+                # 裁剪事件历史
+                events_for_llm = _event_history[-15:] if _event_history else []
+                llm_client.reflect(
+                    state=fsm.state.name,
+                    emotion=fsm.emotion_value,
+                    expression=current_expression,
+                    user_present=user_present,
+                    events=events_for_llm,
+                )
+
+            # ── 处理 LLM 结果 ──
+            if llm_client:
+                result = llm_client.get_result()
+                if result:
+                    delta = result.get("emotion_delta", 0.0)
+                    suggested_expr = result.get("expression", "normal")
+                    if abs(delta) > 0:
+                        fsm.add_emotion(delta, now_ms)
+
+                    # 如果 LLM 建议切换表情且最近没有传感器事件
+                    if not had_events and suggested_expr != current_expression:
+                        try:
+                            from comm.protocol import Expression
+                            expr_enum = Expression[suggested_expr.upper()]
+                            logger.debug(f"LLM 建议切换: {current_expression} → {suggested_expr}")
+                            _send_throttled(link, Cmd.SET_EXPR, bytes([int(expr_enum)]))
+                            current_expression = suggested_expr
+                        except KeyError:
+                            pass
+
+                    # 打印内心独白
+                    thought = result.get("thought", "") or result.get("reply", "")
+                    if thought:
+                        logger.info(f"皮皮: {thought}")
+
             # 空闲时情绪值驱动表情更新
             if (not had_events
                     and now - last_emotion_update > IDLE_EMOTION_UPDATE_MS / 1000.0
@@ -276,6 +390,7 @@ def run_main_loop(link: UartLink, fsm: MachineState, event_queue: queue.Queue,
                 logger.debug(f"空闲情绪更新: {fsm.emotion_value:.2f} → {expr.name}")
                 _send_throttled(link, Cmd.SET_EXPR, bytes([int(expr)]))
                 _send_throttled(link, Cmd.SET_RGB, bytes(rgb))
+                current_expression = expr.name.lower()
                 last_emotion_update = now
                 last_emotion_value = fsm.emotion_value
 
@@ -299,20 +414,32 @@ def run_main_loop(link: UartLink, fsm: MachineState, event_queue: queue.Queue,
 
 def _on_user_arrive(fsm: MachineState, link: UartLink, now_ms: int):
     """用户出现时的反应"""
-    # 从休眠唤醒
     if fsm.state == fsm.state.SLEEP:
         fsm.state = fsm.state.IDLE
         logger.info("用户出现，从 SLEEP 唤醒")
-    # 开心一下
     fsm.add_emotion(0.1, now_ms)
     expr, rgb = decide_by_emotion(fsm.emotion_value)
     _send_throttled(link, Cmd.SET_EXPR, bytes([int(expr)]))
     _send_throttled(link, Cmd.SET_RGB, bytes(rgb))
+    # LLM 即时反应
+    _trigger_llm_react("你刚刚出现在皮皮面前了！")
 
 
 def _on_user_leave(fsm: MachineState, link: UartLink, now_ms: int):
     """用户离开时的反应"""
     fsm.last_event_time = now_ms  # 加速进入休眠
+    _trigger_llm_react("你刚刚离开了...")
+
+
+def _trigger_llm_react(trigger: str):
+    """触发 LLM 即时反应（通过全局 llm_client）"""
+    global _llm_client
+    if _llm_client and _llm_client.available:
+        _llm_client.react(
+            trigger=trigger,
+            state="", emotion=0.5, expression="normal",
+            user_present=True, events=_event_history[-8:],
+        )
 
 
 def _on_user_emotion(fsm: MachineState, link: UartLink, now_ms: int,
@@ -396,20 +523,37 @@ def main():
     elif not args.no_camera and not HAS_CAMERA:
         logger.warning("opencv-python 未安装，摄像头不可用")
 
-    # ── 5. Web API（可选）──
+    # ── 5. LLM 客户端（可选）──
+    llm_client = None
+    if HAS_LLM:
+        try:
+            llm_client = LLMClient()
+            global _llm_client
+            _llm_client = llm_client
+            if llm_client.available:
+                llm_client.start()
+                logger.info("LLM 客户端已启用（每 20s 反思 + 事件即时反应）")
+            else:
+                logger.info("LLM 未配置（设置 DEEPSEEK_API_KEY 环境变量启用）")
+        except Exception as e:
+            logger.warning(f"LLM 客户端初始化失败: {e}")
+
+    # ── 6. Web API（可选）──
     if not args.no_ui:
         try:
             from web_api import WebAPI
-            api = WebAPI(link, fsm)
+            api = WebAPI(link, fsm, llm_client)
             api.start(host="0.0.0.0", port=5000)
         except Exception as e:
             logger.warning(f"Web API 启动失败: {e}")
 
-    # ── 6. 主循环 ──
+    # ── 7. 主循环 ──
     run_main_loop(link, fsm, event_queue, camera, face_detector, preview_window,
-                  emotion_recognizer)
+                  emotion_recognizer, llm_client)
 
-    # ── 7. 清理 ──
+    # ── 8. 清理 ──
+    if llm_client:
+        llm_client.stop()
     try:
         if preview_window:
             destroy_preview(preview_window)

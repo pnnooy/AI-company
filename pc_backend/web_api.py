@@ -32,23 +32,28 @@ logger = logging.getLogger(__name__)
 class WebAPI:
     """Web API 服务（后台线程）"""
 
-    def __init__(self, link: UartLink, fsm: MachineState):
+    def __init__(self, link: UartLink, fsm: MachineState, llm_client=None):
         self.link = link
         self.fsm = fsm
+        self.llm_client = llm_client
         self._server_thread: Optional[threading.Thread] = None
         self._app = None
 
     def start(self, host: str = "0.0.0.0", port: int = 5000):
         """启动 API 服务（后台线程）"""
         try:
-            from flask import Flask, jsonify, request
+            from flask import Flask, jsonify, request, render_template, send_file, Response
         except ImportError:
             logger.error("Flask 未安装，无法启动 Web API。运行: pip install flask")
             return
 
-        app = Flask(__name__)
+        import os
+        template_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
+        static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
+        app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
         link = self.link
         fsm = self.fsm
+        llm_client = self.llm_client
 
         # ── 端点定义 ──────────────────────────
 
@@ -58,11 +63,15 @@ class WebAPI:
 
         @app.route("/api/status")
         def status():
-            """获取机器人当前状态"""
+            import sys
+            main_mod = sys.modules.get('__main__')
+            expr = getattr(main_mod, 'current_expression', 'normal') or 'normal' if main_mod else 'normal'
+            rgb = getattr(main_mod, 'last_rgb', [0, 0, 0]) or [0, 0, 0] if main_mod else [0, 0, 0]
             return jsonify({
                 "state": fsm.state.name,
                 "emotion": round(fsm.emotion_value, 3),
-                "expression": None,  # TODO: 从设备查询
+                "expression": expr,
+                "rgb": list(rgb) if rgb else [0, 0, 0],
             })
 
         @app.route("/api/expression", methods=["POST"])
@@ -98,10 +107,72 @@ class WebAPI:
             ok = link.send_command(Cmd.SET_RGB, bytes([r, g, b]))
             return jsonify({"ok": ok, "rgb": (r, g, b)})
 
+        @app.route("/")
+        def index_page():
+            """前端仪表盘"""
+            return render_template("index.html")
+
+        @app.route("/api/camera_frame")
+        def camera_frame():
+            import sys
+            main_mod = sys.modules.get('__main__')
+            jpg = getattr(main_mod, 'camera_jpeg', None) if main_mod else None
+            if jpg:
+                return Response(jpg, mimetype='image/jpeg')
+            return jsonify({"error": "waiting for camera..."}), 404
+
+        @app.route("/api/debug/event", methods=["POST"])
+        def debug_event():
+            data = request.get_json()
+            if not data:
+                return jsonify({"error": "no data"}), 400
+            evt = data.get("event", "")
+            if evt == "touch":
+                fsm.on_touch_event(int(__import__('time').time() * 1000))
+            elif evt == "nfc":
+                from comm.protocol import NFCLevel
+                lvl = NFCLevel(data.get("level", 1))
+                boost = 0.3 if lvl.value >= 1 else 0.1
+                fsm.on_nfc_event(int(__import__('time').time() * 1000), boost)
+            return jsonify({"ok": True, "event": evt})
+
         @app.route("/api/stats")
         def stats():
-            """获取通信统计"""
             return jsonify(link.get_stats())
+
+        @app.route("/api/chat", methods=["POST"])
+        def chat():
+            data = request.get_json()
+            if not data or "message" not in data:
+                return jsonify({"error": "missing 'message' field"}), 400
+            user_msg = data["message"].strip()
+            if not user_msg:
+                return jsonify({"error": "empty message"}), 400
+            if llm_client and llm_client.available:
+                import sys
+                main_mod = sys.modules.get('__main__')
+                events = getattr(main_mod, '_event_history', [])[-8:] if main_mod else []
+                llm_client.chat(
+                    user_message=user_msg, state=fsm.state.name,
+                    emotion=fsm.emotion_value, expression="normal",
+                    user_present=True, events=events,
+                )
+                return jsonify({"ok": True, "message": user_msg,
+                                "note": "LLM is thinking..."})
+            else:
+                return jsonify({"ok": False, "error": "LLM not available",
+                                "hint": "Set SJTU_API_KEY"}), 503
+
+        @app.route("/api/last_thought")
+        def last_thought():
+            if llm_client:
+                return jsonify({
+                    "thought": llm_client.last_thought,
+                    "emotion_delta": llm_client.last_emotion_delta,
+                    "expression": llm_client.last_suggested_expr,
+                    "calls": llm_client.call_count, "errors": llm_client.error_count,
+                })
+            return jsonify({"thought": "", "error": "LLM not available"})
 
         # 静态文件（前端页面）
         @app.route("/")
