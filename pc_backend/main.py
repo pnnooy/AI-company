@@ -60,7 +60,7 @@ cached_faces = []
 cached_user_emotion = "neutral"
 cached_emotion_conf = 0.0
 current_expression = "normal"  # 供 web_api 读取
-last_rgb = [0, 0, 0]           # 最近一次 RGB 值
+last_rgb = [30, 20, 60]        # 最近一次 RGB 值（默认暗紫色）
 camera_jpeg = None             # 最新摄像头帧（JPEG bytes，供 web_api）
 
 # ============================================================================

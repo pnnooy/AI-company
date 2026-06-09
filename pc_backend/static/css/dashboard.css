@@ -94,7 +94,7 @@ body {
 
 /* Face */
 .face-card { display: flex; flex-direction: column; align-items: center; }
-#face-canvas { background: #000; border-radius: var(--radius); width: 160px; height: 160px; image-rendering: pixelated; }
+.face-img { background: #000; border-radius: var(--radius); width: 160px; height: 160px; image-rendering: pixelated; object-fit: contain; }
 .face-name { margin-top: 8px; font-size: 0.85rem; font-weight: 600; color: var(--gray-600); text-transform: uppercase; font-family: var(--font-ui); }
 
 /* LED */

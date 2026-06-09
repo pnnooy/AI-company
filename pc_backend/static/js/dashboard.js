@@ -3,8 +3,8 @@ const API = '/api';
 
 // === State ===
 let currentExpr = 'normal';
-let currentRgb = [0,0,0];
-let ledColor = '#000';
+let currentRgb = [30,20,60];
+let ledColor = 'rgb(30,20,60)';
 const logLines = [];
 const MAX_LOG = 200;
 
@@ -20,25 +20,27 @@ document.addEventListener('DOMContentLoaded', () => {
   setInterval(fetchThoughts, 3000);
 });
 
-// === Robot Face (PNG images from actual firmware assets) ===
-const faceImages = {};
-const exprNames = ['normal','happy','focus','angry','sleep','surprise','sad','love'];
-exprNames.forEach(e => {
-  faceImages[e] = new Image();
-  faceImages[e].src = '/static/img/emo_' + e + '_f0.png';
-});
+// === Robot Face (img tag, animated 3 frames) ===
+const ANIM_RATES = { normal:300, happy:200, focus:500, angry:300, sleep:1000, surprise:200, sad:400, love:300 };
+let faceTimer = null;
+let faceFrame = 0;
 
 function drawFace(expr) {
-  if (expr === currentExpr) return;
+  if (!expr || !ANIM_RATES[expr]) expr = 'normal';
+  if (expr === currentExpr && faceTimer) return;
   currentExpr = expr;
-  const c = document.getElementById('face-canvas');
-  const ctx = c.getContext('2d');
-  const img = faceImages[expr] || faceImages['normal'];
-  if (img.complete) {
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(img, 0, 0, 80, 80);
-  }
+
+  if (faceTimer) { clearInterval(faceTimer); faceTimer = null; }
+  faceFrame = 0;
+
+  const el = document.getElementById('face-img');
+  el.src = '/static/img/emo_' + expr + '_f0.png';
   document.getElementById('face-name').textContent = expr;
+
+  faceTimer = setInterval(() => {
+    faceFrame = (faceFrame + 1) % 3;
+    document.getElementById('face-img').src = '/static/img/emo_' + expr + '_f' + faceFrame + '.png';
+  }, ANIM_RATES[expr] || 300);
 }
 
 // === LED ===
@@ -56,9 +58,9 @@ async function fetchStatus() {
     const r = await fetch(API + '/status');
     const data = await r.json();
     drawFace((data.expression || 'normal').toLowerCase());
-    updateEmotion(data.emotion || 0.5);
+    // emotion 可能是 0（合法值），不能用 || 0.5
+    updateEmotion(data.emotion != null ? data.emotion : 0.5);
     document.getElementById('fsm-state').textContent = data.state || 'IDLE';
-    // RGB LED
     if (data.rgb) {
       currentRgb = data.rgb;
       ledColor = `rgb(${data.rgb[0]},${data.rgb[1]},${data.rgb[2]})`;
@@ -84,10 +86,14 @@ async function fetchThoughts() {
 
 async function fetchCamera() {
   try {
-    const r = await fetch(API + '/camera_frame');
+    const r = await fetch(API + '/camera_frame?t=' + Date.now());
     if (r.ok) {
       const blob = await r.blob();
-      document.getElementById('camera-feed').src = URL.createObjectURL(blob);
+      const url = URL.createObjectURL(blob);
+      const img = document.getElementById('camera-feed');
+      const oldUrl = img.src;
+      img.src = url;
+      if (oldUrl && oldUrl.startsWith('blob:')) URL.revokeObjectURL(oldUrl);
       document.getElementById('camera-status').textContent = 'ONLINE';
       document.getElementById('camera-status').className = 'camera-status online';
       document.getElementById('cam-status').className = 'status-dot online';
