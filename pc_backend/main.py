@@ -343,9 +343,9 @@ def run_main_loop(link: UartLink, fsm: MachineState, event_queue: queue.Queue,
             # 状态机 tick（情绪衰减 + 超时转移）
             fsm.tick(now_ms)
 
-            # ── LLM 反思（每 6s）──
+            # ── LLM 反思（每 15s，低优先级）──
             if (llm_client and llm_client.available
-                    and now - last_llm_reflect_time > 6):
+                    and now - last_llm_reflect_time > 15):
                 last_llm_reflect_time = now
                 # 裁剪事件历史
                 events_for_llm = _event_history[-15:] if _event_history else []

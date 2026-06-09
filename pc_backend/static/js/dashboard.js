@@ -15,10 +15,22 @@ document.addEventListener('DOMContentLoaded', () => {
   initDebug();
   initLed();
   fetchCamera();
-  setInterval(fetchCamera, 80);    // ~12fps camera
-  setInterval(fetchStatus, 500);    // 2Hz status
+  setInterval(fetchCamera, 80);
+  setInterval(fetchStatus, 500);
   setInterval(fetchThoughts, 3000);
+  // 动态匹配聊天框高度到左侧
+  matchChatHeight();
+  window.addEventListener('resize', matchChatHeight);
+  setInterval(matchChatHeight, 2000);
 });
+
+function matchChatHeight() {
+  const left = document.querySelector('.left-col');
+  const chatCard = document.querySelector('.right-col .chat-card');
+  if (left && chatCard) {
+    chatCard.style.maxHeight = left.offsetHeight + 'px';
+  }
+}
 
 // === Robot Face (img tag, animated 3 frames) ===
 const ANIM_RATES = { normal:300, happy:200, focus:500, angry:300, sleep:1000, surprise:200, sad:400, love:300 };
@@ -64,7 +76,6 @@ async function fetchStatus() {
     if (data.rgb) {
       currentRgb = data.rgb;
       ledColor = `rgb(${data.rgb[0]},${data.rgb[1]},${data.rgb[2]})`;
-      document.getElementById('led-values').textContent = `(${data.rgb[0]}, ${data.rgb[1]}, ${data.rgb[2]})`;
     }
     document.getElementById('serial-status').className = 'status-dot online';
   } catch(e) {
@@ -77,9 +88,15 @@ async function fetchThoughts() {
     const r = await fetch(API + '/last_thought');
     const data = await r.json();
     if (data.calls > 0) document.getElementById('llm-status').className = 'status-dot online';
+    // 显示内心独白
     if (data.thought && data.thought !== window._lastThought) {
       window._lastThought = data.thought;
       addChatMsg('thought', data.thought);
+    }
+    // 显示聊天回复（必须有内容才显示）
+    if (data.reply && data.reply.trim() && data.reply !== window._lastReply) {
+      window._lastReply = data.reply;
+      addChatMsg('system', data.reply);
     }
   } catch(e) { document.getElementById('llm-status').className = 'status-dot offline'; }
 }

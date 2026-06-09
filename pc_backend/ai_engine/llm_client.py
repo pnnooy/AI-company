@@ -66,8 +66,9 @@ DEFAULT_MODELS = {
 LLM_MODEL = os.environ.get("LLM_MODEL", DEFAULT_MODELS.get(BACKEND, "deepseek-chat"))
 LLM_MAX_TOKENS = 150
 LLM_TEMPERATURE = 0.9
-LLM_REFLECT_COOLDOWN_SEC = 8    # ~7 calls/min
-LLM_EVENT_COOLDOWN_SEC = 5       # ~12 calls/min
+LLM_REFLECT_COOLDOWN_SEC = 15   # 反思低优先级，降频
+LLM_EVENT_COOLDOWN_SEC = 8       # 事件反应
+LLM_CHAT_COOLDOWN_SEC = 0        # 聊天无冷却，即时响应
 LLM_TIMEOUT_SEC = 10             # API 超时
 LLM_BACKOFF_BASE_SEC = 15        # 429 退避基础时间
 LLM_BACKOFF_MAX_SEC = 120        # 最大退避时间
@@ -89,7 +90,8 @@ class LLMClient:
         self.model = LLM_MODEL
         self._client = None
 
-        self._request_queue = queue.Queue()
+        self._request_queue = queue.PriorityQueue()  # (priority, seq, request)
+        self._request_seq = 0
         self._result_queue = queue.Queue()
         self._thread: Optional[threading.Thread] = None
         self._running = False
@@ -136,11 +138,12 @@ class LLMClient:
             return
         if self._in_backoff():
             return
-        self._request_queue.put({
+        self._request_seq += 1
+        self._request_queue.put((2, self._request_seq, {
             "type": "reflect", "state": state, "emotion": emotion,
             "expression": expression, "user_present": user_present,
             "events": events[-8:],
-        })
+        }))
 
     def react(self, trigger, state, emotion, expression, user_present, events):
         if not self.available or not self._running:
@@ -151,22 +154,27 @@ class LLMClient:
         if now - self._last_call_time < LLM_EVENT_COOLDOWN_SEC:
             return
         self._last_call_time = now
-        self._request_queue.put({
+        self._request_seq += 1
+        self._request_queue.put((2, self._request_seq, {
             "type": "react", "trigger": trigger,
             "state": state, "emotion": emotion,
             "expression": expression, "user_present": user_present,
             "events": events[-8:],
-        })
+        }))
 
     def chat(self, user_message, state, emotion, expression, user_present, events):
         if not self.available or not self._running:
             return
-        self._request_queue.put({
+        if self._in_backoff():
+            return
+        self._request_seq += 1
+        # 聊天高优先级：priority=1，即时响应
+        self._request_queue.put((1, self._request_seq, {
             "type": "chat", "user_message": user_message,
             "state": state, "emotion": emotion,
             "expression": expression, "user_present": user_present,
             "events": events[-8:],
-        })
+        }))
 
     def get_result(self) -> Optional[Dict[str, Any]]:
         try:
@@ -180,7 +188,7 @@ class LLMClient:
             return
         while self._running:
             try:
-                req = self._request_queue.get(timeout=1.0)
+                _, _, req = self._request_queue.get(timeout=1.0)
             except queue.Empty:
                 continue
             try:

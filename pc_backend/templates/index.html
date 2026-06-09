@@ -14,8 +14,7 @@
   <div class="nav-container">
     <div class="nav-logo">
       <div class="nav-logo-text">
-        <span class="nav-title">皮皮 · Pipi</span>
-        <span class="nav-subtitle">桌面学术助手机器人</span>
+        <span class="nav-title">桌面宠物 · 皮皮</span>
       </div>
     </div>
     <div class="nav-indicators">
@@ -27,58 +26,48 @@
 </nav>
 
 <div class="dashboard">
-  <!-- Row 1: Face + LED + Camera + Emotion -->
+  <!-- Top: Left (Face+Emotion+Camera+LED) | Right (Chat) -->
   <div class="top-row">
-    <!-- 机器人表情 -->
-    <div class="card face-card">
-      <div class="card-label"><i class="fas fa-smile"></i> 表情</div>
-      <img id="face-img" src="/static/img/emo_normal_f0.png" alt="face" class="face-img">
-      <div class="face-name" id="face-name">normal</div>
-    </div>
-
-    <!-- LED 灯珠 -->
-    <div class="card led-card">
-      <div class="card-label"><i class="fas fa-lightbulb"></i> RGB 灯光</div>
-      <div class="led-display">
-        <div class="led-circle" id="led-circle"></div>
+    <div class="left-col">
+      <div class="card face-card">
+        <div class="card-label"><i class="fas fa-smile"></i> 表情</div>
+        <img id="face-img" src="/static/img/emo_normal_f0.png" alt="face" class="face-img">
+        <div class="face-name" id="face-name">normal</div>
       </div>
-      <div class="led-values" id="led-values">(0, 0, 0)</div>
-    </div>
-
-    <!-- 用户摄像头 -->
-    <div class="card camera-card">
-      <div class="card-label"><i class="fas fa-video"></i> 摄像头</div>
-      <img id="camera-feed" src="" alt="摄像头" class="camera-feed">
-      <div class="camera-status" id="camera-status">OFFLINE</div>
-    </div>
-
-    <!-- 情绪值 -->
-    <div class="card emotion-card">
-      <div class="card-label"><i class="fas fa-heart"></i> 情绪值</div>
-      <div class="emotion-value" id="emotion-value">0.50</div>
-      <div class="progress-bar-container">
-        <div class="progress-bar" id="emotion-bar"></div>
+      <div class="card emotion-card">
+        <div class="card-label"><i class="fas fa-heart"></i> 情绪值</div>
+        <div class="emotion-value" id="emotion-value">0.50</div>
+        <div class="progress-bar-container">
+          <div class="progress-bar" id="emotion-bar"></div>
+        </div>
+        <div class="emotion-desc" id="emotion-desc">心情不错</div>
+        <div class="fsm-state" id="fsm-state">IDLE</div>
+        <div class="led-inline">
+          <div class="led-circle" id="led-circle"></div>
+        </div>
       </div>
-      <div class="emotion-desc" id="emotion-desc">心情不错</div>
-      <div class="fsm-state" id="fsm-state">IDLE</div>
+      <div class="card camera-card">
+        <div class="card-label"><i class="fas fa-video"></i> 摄像头</div>
+        <img id="camera-feed" src="" alt="摄像头" class="camera-feed">
+        <div class="camera-status" id="camera-status">OFFLINE</div>
+      </div>
+    </div>
+    <div class="right-col">
+      <div class="card chat-card">
+        <div class="card-label"><i class="fas fa-comments"></i> 聊天</div>
+        <div class="chat-messages" id="chat-messages">
+          <div class="chat-msg system">皮皮启动中...</div>
+        </div>
+        <div class="chat-input-row">
+          <input type="text" id="chat-input" placeholder="和皮皮说点什么..." />
+          <button id="chat-send"><i class="fas fa-paper-plane"></i></button>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Row 2: Chat + Debug -->
-  <div class="mid-row">
-    <!-- 聊天窗口 -->
-    <div class="card chat-card">
-      <div class="card-label"><i class="fas fa-comments"></i> 聊天</div>
-      <div class="chat-messages" id="chat-messages">
-        <div class="chat-msg system">皮皮启动中...</div>
-      </div>
-      <div class="chat-input-row">
-        <input type="text" id="chat-input" placeholder="和皮皮说点什么..." />
-        <button id="chat-send"><i class="fas fa-paper-plane"></i></button>
-      </div>
-    </div>
-
-    <!-- 调试面板 -->
+  <!-- Bottom: Debug (left) | Log (right) -->
+  <div class="bottom-row">
     <div class="card debug-card">
       <div class="card-label"><i class="fas fa-sliders"></i> 调试</div>
       <div class="debug-grid">
@@ -117,13 +106,11 @@
         <button id="debug-test-nfc" class="btn btn-sm">测试 NFC</button>
       </div>
     </div>
-  </div>
-
-  <!-- Row 3: Log -->
-  <div class="card log-card">
-    <div class="card-label"><i class="fas fa-terminal"></i> 日志</div>
-    <div class="log-container" id="log-container">
-      <div class="log-entry">系统就绪</div>
+    <div class="card log-card">
+      <div class="card-label"><i class="fas fa-terminal"></i> 日志</div>
+      <div class="log-container" id="log-container">
+        <div class="log-entry">系统就绪</div>
+      </div>
     </div>
   </div>
 </div>

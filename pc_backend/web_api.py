@@ -168,11 +168,12 @@ class WebAPI:
             if llm_client:
                 return jsonify({
                     "thought": llm_client.last_thought,
+                    "reply": llm_client.last_reply,
                     "emotion_delta": llm_client.last_emotion_delta,
                     "expression": llm_client.last_suggested_expr,
                     "calls": llm_client.call_count, "errors": llm_client.error_count,
                 })
-            return jsonify({"thought": "", "error": "LLM not available"})
+            return jsonify({"thought": "", "reply": "", "error": "LLM not available"})
 
         # 静态文件（前端页面）
         @app.route("/")
