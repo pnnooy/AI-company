@@ -9,7 +9,7 @@
  * │ 0xA5 │ 0x5A │  1B  │ CMD(1B)+Data │ CRC-8│ 0xEE │
  * └──────┴──────┴──────┴──────────────┴──────┴──────┘
  *
- * LEN: Total PAYLOAD length (CMD + DATA), range [1, 33]
+ * LEN: Total payload including CRC, range [2, 34]
  * CRC-8: Polynomial 0x07, covers PAYLOAD only
  * Timeout: 100ms frame receive timeout
  */

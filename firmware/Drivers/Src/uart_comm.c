@@ -98,7 +98,7 @@ void UART_SendPacket(uint8_t cmd, const uint8_t *payload, uint8_t len) {
 
     buf[0] = UART_SYNC0_BYTE;   /* 0xA5 */
     buf[1] = UART_SYNC1_BYTE;   /* 0x5A */
-    buf[2] = 1 + len;            /* LEN = CMD(1) + payload */
+    buf[2] = 1 + len + 1;        /* LEN = CMD(1) + payload(len) + CRC(1) */
 
     /* Build body for CRC */
     body_buf[0] = cmd;
@@ -161,8 +161,8 @@ void UART_ParseFrames(void) {
             break;
 
         case GET_LEN:
-            /* LEN must be in range [1, 33] */
-            if (b == 0 || b > 33) {
+            /* LEN must be in range [2, 34] (including CRC) */
+            if (b < 2 || b > 34) {
                 uart_err_stats.invalid_len++;
                 state = WAIT_SYNC0;
                 break;
