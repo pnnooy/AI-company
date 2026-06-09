@@ -1,9 +1,9 @@
 """
 rules.py — 规则引擎
 ==================
-基于规则的决策映射：事件 + 当前状态 → 表情 + 灯光。
+基于规则的决策映射：事件 + 情绪值 → 表情 + 灯光。
 
-更新日期: 2026-06-04（适配新协议 v2.0）
+更新日期: 2026-06-09（修复审查发现的问题 3：情绪值接入决策）
 
 这是 AI 引擎 V1 的核心逻辑，简单、可调试、确定性高。
 后续 V2/V3 可在此基础上叠加更复杂的决策。
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 # ============================================================================
-# 规则表
+# 规则表 — 基础映射（事件 → 表情/灯光）
 # ============================================================================
 
 # 格式: (event_code, condition_fn, expression, R, G, B, duration_ms)
@@ -26,7 +26,6 @@ logger = logging.getLogger(__name__)
 
 RULES = [
     # ── 姿态事件（最高优先级）────────────────────
-    # (事件码,          条件函数,                                     表情,            R,   G,   B,  持续时间)
     (EventCode.POSE,    lambda e: e.pose.state == PoseState.FALL,    Expression.ANGRY,   255,   0,   0,  3000),
     (EventCode.POSE,    lambda e: e.pose.state == PoseState.SHAKE,   Expression.SURPRISE,255, 128,   0,  2000),
 
@@ -45,6 +44,32 @@ RULES = [
 
 
 # ============================================================================
+# 情绪值 → 表情修饰（问题 3）
+# ============================================================================
+
+# 高情绪时用更开心的表情替代，低情绪时用更沮丧的表情替代
+# 仅修饰"中性"事件（触摸 TAP、NFC TAP/SNACK），不覆盖 FALL/SHAKE/FEAST/HOLD
+
+_EMOTION_UPGRADE = {
+    # 原表情 → 高情绪替代 (>0.7)
+    Expression.FOCUS: Expression.HAPPY,
+    Expression.SURPRISE: Expression.LOVE,
+    Expression.HAPPY: Expression.LOVE,
+    Expression.NORMAL: Expression.HAPPY,
+    Expression.SAD: Expression.NORMAL,
+}
+
+_EMOTION_DOWNGRADE = {
+    # 原表情 → 低情绪替代 (<0.3)
+    Expression.FOCUS: Expression.SAD,
+    Expression.SURPRISE: Expression.ANGRY,
+    Expression.HAPPY: Expression.NORMAL,
+    Expression.NORMAL: Expression.SAD,
+    Expression.LOVE: Expression.HAPPY,
+}
+
+
+# ============================================================================
 # NFC 等级 → 情绪提升映射
 # ============================================================================
 
@@ -55,7 +80,6 @@ NFC_EMOTION_BOOST = {
     NFCLevel.FEAST: 0.8,   # > 30秒
 }
 
-# 默认情绪提升（未识别的 NFC 等级）
 DEFAULT_NFC_BOOST = 0.1
 
 
@@ -68,12 +92,14 @@ def get_nfc_emotion_boost(level: NFCLevel) -> float:
 # 决策函数
 # ============================================================================
 
-# 函数签名: (SensorEvent, emotion_value: float) → (Expression, (R, G, B), duration_ms)
-# 返回 None 表示不产生决策输出
-
 def decide(event, emotion_value: float = 0.5) -> Optional[Tuple[Expression, Tuple[int, int, int], int]]:
     """
     根据传感器事件和当前情绪值，决定输出。
+
+    问题3修复：情绪值现在会影响最终表情。
+    - 高情绪 (>0.7)：升级表情（HAPPY→LOVE）
+    - 低情绪 (<0.3)：降级表情（HAPPY→SAD）
+    - 中等情绪：使用基础规则结果
 
     Args:
         event: SensorEvent 对象
@@ -86,45 +112,52 @@ def decide(event, emotion_value: float = 0.5) -> Optional[Tuple[Expression, Tupl
         if event.event_code == event_code:
             try:
                 if condition is None or condition(event):
+                    # 情绪修饰
+                    # 安抚事件（触摸/NFC）：只升级不降级，摸她永远不该生气
+                    # 刺激事件（SHAKE/FALL）：情绪低时可能表现更差
+                    original = expr
+                    is_comfort = event_code in (EventCode.TOUCH, EventCode.NFC)
+
+                    if emotion_value > 0.7 and expr in _EMOTION_UPGRADE:
+                        expr = _EMOTION_UPGRADE[expr]
+                    elif emotion_value < 0.3 and expr in _EMOTION_DOWNGRADE and not is_comfort:
+                        expr = _EMOTION_DOWNGRADE[expr]
+
+                    extra = ""
+                    if expr != original:
+                        extra = f" (emotion={emotion_value:.2f}, {original.name}→{expr.name})"
+
                     logger.info(
                         f"规则匹配: {event_code.name} → {expr.name}, "
-                        f"RGB=({r},{g},{b}), dur={dur}ms"
+                        f"RGB=({r},{g},{b}), dur={dur}ms{extra}"
                     )
                     return expr, (r, g, b), dur
             except Exception:
-                # 条件函数执行异常（如数据不完整），跳过
                 continue
 
     logger.debug(f"无匹配规则: {event.event_code.name}")
     return None
 
 
-def decide_expression_and_rgb(
-    emotion_value: float,
-    event_type: str = "idle"
-) -> Tuple[Expression, Tuple[int, int, int]]:
+def decide_by_emotion(emotion_value: float) -> Tuple[Expression, Tuple[int, int, int]]:
     """
-    根据情绪值决定表情和灯光（用于被动展示或事件触发时的辅助决策）。
+    仅根据情绪值决定表情和灯光（用于无事件时的被动展示 / 空闲状态更新）。
+
+    问题3修复：主循环定期调用此函数，让情绪值真正驱动表情变化。
 
     Args:
         emotion_value: 情绪值 [0.0 ~ 1.0]
-        event_type: "idle" | "touch" | "nfc" | "alert" | "shake"
 
     Returns:
         (expression, (R, G, B))
     """
-    if event_type == "alert":
-        return Expression.ANGRY, (255, 0, 0)
-
-    if event_type == "shake":
-        return Expression.SURPRISE, (255, 128, 0)
-
-    # 基于情绪值
     if emotion_value > 0.7:
         return Expression.HAPPY, (0, 255, 50)
-    elif emotion_value > 0.4:
-        return Expression.NORMAL, (50, 50, 100)
-    elif emotion_value > 0.2:
-        return Expression.SAD, (100, 50, 0)
+    elif emotion_value > 0.5:
+        return Expression.NORMAL, (50, 100, 150)
+    elif emotion_value > 0.3:
+        return Expression.SAD, (100, 80, 30)
+    elif emotion_value > 0.15:
+        return Expression.ANGRY, (200, 30, 0)
     else:
-        return Expression.ANGRY, (255, 20, 0)
+        return Expression.SLEEP, (10, 5, 30)
