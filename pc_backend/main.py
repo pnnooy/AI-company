@@ -442,28 +442,33 @@ def _trigger_llm_react(trigger: str):
         )
 
 
+# 上次检测到的用户情绪（用于触发 LLM 反应）
+_last_user_emotion = "neutral"
+
+
 def _on_user_emotion(fsm: MachineState, link: UartLink, now_ms: int,
                      user_emotion: str, confidence: float):
-    """根据用户表情微调机器人情绪（仅在 >50% 置信度时生效）"""
+    """根据用户表情调情绪 + 触发 LLM 语言回复"""
+    global _last_user_emotion
     if confidence < 0.5:
         return
 
-    # 用户情绪 → 机器人情绪调节
     boosts = {
-        "happy":     0.03,   # 用户开心 → 机器人也开心
-        "surprise":  0.02,
-        "sad":       -0.02,  # 用户难过 → 机器人稍微感同身受
-        "angry":     -0.03,
-        "fear":      -0.02,
-        "neutral":    0.0,
+        "happy":     0.03, "surprise":  0.02,
+        "sad":       -0.02, "angry":     -0.03,
+        "fear":      -0.02, "neutral":    0.0,
     }
     delta = boosts.get(user_emotion, 0.0)
     if abs(delta) > 0:
         fsm.add_emotion(delta, now_ms)
-        logger.debug(
-            f"用户情绪: {user_emotion} ({confidence:.0%}) → "
-            f"机器人情绪 {'+' if delta > 0 else ''}{delta:+.2f}"
-        )
+        logger.debug(f"用户情绪: {user_emotion} ({confidence:.0%}) → 机器人 {'+' if delta > 0 else ''}{delta:+.2f}")
+
+    # 用户表情变了 → 皮皮马上回应
+    if user_emotion != _last_user_emotion and user_emotion != "neutral":
+        _last_user_emotion = user_emotion
+        emotion_cn = {"happy": "开心", "surprise": "惊讶", "sad": "难过",
+                      "angry": "生气", "fear": "害怕"}.get(user_emotion, user_emotion)
+        _trigger_llm_react(f"你看起来有点{emotion_cn}，皮皮注意到了你的表情！")
 
 
 # ============================================================================

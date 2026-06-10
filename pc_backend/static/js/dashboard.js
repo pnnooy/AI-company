@@ -77,6 +77,13 @@ async function fetchStatus() {
       currentRgb = data.rgb;
       ledColor = `rgb(${data.rgb[0]},${data.rgb[1]},${data.rgb[2]})`;
     }
+    // 用户情绪
+    if (data.user_emotion && data.user_emotion !== 'neutral') {
+      const el = document.getElementById('user-emotion');
+      el.style.display = 'block';
+      document.getElementById('user-emotion-label').textContent =
+        data.user_emotion + ' (' + Math.round((data.user_emotion_conf||0)*100) + '%)';
+    }
     document.getElementById('serial-status').className = 'status-dot online';
   } catch(e) {
     document.getElementById('serial-status').className = 'status-dot offline';
@@ -173,12 +180,15 @@ function addLog(src, msg, level) {
 function initDebug() {
   document.getElementById('debug-apply').addEventListener('click', () => {
     const expr = document.getElementById('debug-expr').value;
+    const exprName = document.getElementById('debug-expr').options[document.getElementById('debug-expr').selectedIndex].text;
     const r = document.getElementById('debug-r').value;
     const g = document.getElementById('debug-g').value;
     const b = document.getElementById('debug-b').value;
-    fetch(API + '/expression', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({expression: document.getElementById('debug-expr').options[document.getElementById('debug-expr').selectedIndex].text}) });
+    const emotion = parseInt(document.getElementById('debug-emotion').value) / 100;
+    fetch(API + '/expression', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({expression: exprName}) });
     fetch(API + '/led', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({r:parseInt(r),g:parseInt(g),b:parseInt(b)}) });
-    addLog('调试', `设置表情+LED`, 'info');
+    fetch(API + '/debug/emotion', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({emotion: emotion}) });
+    addLog('调试', `设置 表情=${exprName} LED=(${r},${g},${b}) 情绪=${emotion.toFixed(2)}`, 'info');
   });
 
   document.getElementById('debug-test-touch').addEventListener('click', () => {
@@ -193,7 +203,10 @@ function initDebug() {
 
   const emoRange = document.getElementById('debug-emotion');
   emoRange.addEventListener('input', () => {
-    document.getElementById('debug-emotion-val').textContent = (emoRange.value / 100).toFixed(2);
+    const v = (emoRange.value / 100).toFixed(2);
+    document.getElementById('debug-emotion-val').textContent = v;
+    // 拖动即时生效
+    fetch(API + '/debug/emotion', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({emotion: parseFloat(v)}) });
   });
 }
 

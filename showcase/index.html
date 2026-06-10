@@ -49,7 +49,8 @@
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html { scroll-behavior: smooth; font-size: 19px; }
+    html { scroll-behavior: smooth; font-size: 19px; -ms-overflow-style: none; scrollbar-width: none; }
+    ::-webkit-scrollbar { display: none; }
 
     body {
       font-family: var(--font-body);
@@ -60,7 +61,7 @@
     }
 
     .container {
-      max-width: 1400px;
+      max-width: 1600px;
       margin: 0 auto;
       padding: 0 24px;
     }
@@ -104,16 +105,16 @@
       max-width: 800px;
     }
     .hero-character {
-      width: 240px;
-      height: 240px;
+      width: 360px;
+      height: 360px;
       margin: 0 auto 32px;
       border-radius: 50%;
-      background: rgba(255,255,255,0.15);
-      backdrop-filter: blur(10px);
+      background: white;
       display: flex;
       align-items: center;
       justify-content: center;
       animation: float 3s ease-in-out infinite;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.15);
     }
     .hero-character img {
       width: 210px;
@@ -190,38 +191,6 @@
       0%,20%,50%,80%,100% { transform: translateX(-50%) translateY(0); }
       40% { transform: translateX(-50%) translateY(-10px); }
       60% { transform: translateX(-50%) translateY(-5px); }
-    }
-
-    /* ===== KEYBOARD HINT ===== */
-    .keyboard-hint {
-      position: fixed;
-      bottom: 28px;
-      left: 28px;
-      z-index: 999;
-      background: rgba(15,23,42,0.7);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      color: rgba(255,255,255,0.7);
-      padding: 8px 14px;
-      border-radius: 100px;
-      font-family: var(--font-ui);
-      font-size: 0.7rem;
-      box-shadow: var(--shadow);
-      transition: opacity 0.4s;
-      pointer-events: none;
-    }
-    .keyboard-hint kbd {
-      display: inline-block;
-      background: rgba(255,255,255,0.15);
-      padding: 2px 7px;
-      border-radius: 4px;
-      margin: 0 3px;
-      font-family: var(--font-mono);
-      font-size: 0.7rem;
-      border: 1px solid rgba(255,255,255,0.2);
-    }
-    @media (max-width: 768px) {
-      .keyboard-hint { display: none; }
     }
 
     /* ===== SECTIONS ===== */
@@ -425,11 +394,37 @@
     }
     .emo-btn:hover .emo-tip, .emo-btn.active .emo-tip { opacity: 1; }
 
+    /* ===== PARTICLE BURST ===== */
+    .burst-particle {
+      position: absolute;
+      pointer-events: none;
+      border-radius: 50%;
+      animation: burst-out 0.7s ease-out forwards;
+      z-index: 10;
+    }
+    @keyframes burst-out {
+      0%   { transform: translate(0, 0) scale(1); opacity: 1; }
+      100% { transform: translate(var(--bx), var(--by)) scale(0); opacity: 0; }
+    }
+
+    /* ===== ENDING PAGE ===== */
+    .end-link:hover {
+      color: white !important;
+      background: rgba(255,255,255,0.14) !important;
+      transform: translateY(-4px);
+    }
+
+    #demoIcons {
+      transition: opacity 0.3s, transform 0.3s;
+    }
+
     /* ===== VIDEO CARDS ===== */
     .video-grid-2x4 {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 20px;
+      max-width: 1000px;
+      margin: 0 auto;
     }
     .video-grid-2x2 {
       display: grid;
@@ -476,7 +471,7 @@
     .split-layout {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 32px;
+      gap: 24px;
       align-items: start;
     }
     .split-card {
@@ -513,17 +508,6 @@
       font-family: var(--font-body);
     }
 
-    /* ===== STATUS BADGES ===== */
-    .status-badge {
-      display: inline-block;
-      padding: 3px 10px;
-      border-radius: 100px;
-      font-size: 0.7rem;
-      font-weight: 600;
-      margin-left: 8px;
-    }
-    .status-done { background: #dcfce7; color: #16a34a; }
-    .status-pending { background: #fef3c7; color: #d97706; }
 
     /* ===== ARCHITECTURE ===== */
     .arch-section { background: var(--gray-50); }
@@ -630,13 +614,14 @@
       gap: 28px;
     }
     .team-card {
-      width: 200px;
-      background: var(--gray-50);
-      border-radius: var(--radius-lg);
-      padding: 20px;
+      width: 230px;
+      background: white;
+      border-radius: var(--radius-xl);
+      padding: 28px 20px;
       text-align: center;
       border: 1px solid var(--gray-200);
       transition: all 0.3s ease;
+      box-shadow: var(--shadow-sm);
     }
     .team-card:hover {
       box-shadow: var(--shadow-lg);
@@ -644,26 +629,44 @@
       transform: translateY(-8px);
     }
     .team-avatar {
-      width: 80px; height: 80px;
+      width: 90px; height: 90px;
       border-radius: 50%;
-      background: var(--gradient-primary);
-      margin: 0 auto 14px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 2rem;
-      color: white;
-      font-family: var(--font-cute);
+      margin: 0 auto 16px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+    .team-avatar img {
+      width: 100%; height: 100%;
+      object-fit: cover;
     }
     .team-card h4 {
-      font-size: 0.95rem;
-      font-weight: 600;
+      font-size: 1.05rem;
+      font-weight: 700;
       color: var(--gray-900);
+      margin-bottom: 4px;
     }
     .team-card .team-role {
-      font-size: 0.75rem;
-      color: var(--gray-500);
-      margin-top: 4px;
+      font-size: 0.72rem;
+      color: var(--primary);
+      font-weight: 600;
+      font-family: var(--font-ui);
+      margin-bottom: 16px;
+    }
+    .team-tags {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 5px;
+    }
+    .work-tag {
+      display: inline-block;
+      padding: 3px 8px;
+      background: var(--gray-100);
+      border-radius: 100px;
+      font-size: 0.68rem;
+      color: var(--gray-700);
+      font-family: var(--font-ui);
+      white-space: nowrap;
     }
 
     /* ===== RGB COLOR SECTION ===== */
@@ -731,11 +734,6 @@
   </style>
 </head>
 <body>
-
-<!-- ===== KEYBOARD HINT ===== -->
-<div class="keyboard-hint" id="keyboardHint">
-  <kbd>↑↓</kbd> 或 <kbd>PgUp</kbd><kbd>PgDn</kbd> 翻页
-</div>
 
 <!-- ===== SECTION 1: HERO ===== -->
 <header class="hero" id="hero">
@@ -857,36 +855,7 @@
   </div>
 </section>
 
-<!-- ===== SECTION 5: AI DIALOGUE + FEEDING ===== -->
-<section class="section" id="dialogue">
-  <div class="container">
-    <div class="section-header fade-up">
-      <span class="section-tag"><i class="fas fa-robot"></i> AI Interaction</span>
-      <h2>AI 对话交互 · 喂食功能</h2>
-      <p class="section-desc">前端聊天窗口与实物机器人同步响应</p>
-    </div>
-    <div class="split-layout fade-up">
-      <div class="split-card">
-        <div class="split-label"><i class="fas fa-desktop"></i> 前端聊天界面 <span class="status-badge status-pending">待替换</span></div>
-        <video muted loop playsinline autoplay preload="auto"
-          poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='400'%3E%3Crect fill='%231e293b' width='640' height='400'/%3E%3Ctext fill='%2394a3b8' x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-family='sans-serif' font-size='20'%3E🤖 AI 对话演示%3C/text%3E%3C/svg%3E">
-          <source src="../视频/屏幕录制 2026-06-10 004221.mp4" type="video/mp4">
-        </video>
-        <div class="split-note">V09 · 用户输入文字 → AI 回复 → 表情变化</div>
-      </div>
-      <div class="split-card">
-        <div class="split-label"><i class="fas fa-robot"></i> 实物机器人响应 <span class="status-badge status-pending">待替换</span></div>
-        <video muted loop playsinline autoplay preload="auto"
-          poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='400'%3E%3Crect fill='%231e293b' width='640' height='400'/%3E%3Ctext fill='%2394a3b8' x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-family='sans-serif' font-size='20'%3E🎬 实物响应演示%3C/text%3E%3C/svg%3E">
-          <source src="../视频/屏幕录制 2026-06-10 004221.mp4" type="video/mp4">
-        </video>
-        <div class="split-note">V10 · LCD 表情变化 + RGB 灯光响应</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ===== SECTION 6: PIPI CHAT ===== -->
+<!-- ===== SECTION 5: PIPI CHAT ===== -->
 <section class="section section-alt" id="pipi">
   <div class="container">
     <div class="section-header fade-up">
@@ -894,20 +863,20 @@
       <h2>与皮皮聊天</h2>
       <p class="section-desc">皮皮的拟人化日常对话 — 你的桌面 AI 陪伴伙伴</p>
     </div>
-    <div class="split-layout fade-up" style="grid-template-columns:1fr; max-width:700px; margin:0 auto;">
+    <div class="split-layout fade-up" style="grid-template-columns:1fr; max-width:900px; margin:0 auto;">
       <div class="split-card">
-        <div class="split-label"><i class="fas fa-desktop"></i> 聊天界面 <span class="status-badge status-done">✓ 已拍好</span></div>
-        <video muted loop playsinline autoplay preload="auto"
+        <div class="split-label"><i class="fas fa-desktop"></i> 聊天界面</div>
+        <video muted loop playsinline autoplay preload="auto" style="aspect-ratio: 16 / 9;"
           poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='400'%3E%3Crect fill='%231e293b' width='640' height='400'/%3E%3Ctext fill='%2394a3b8' x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-family='sans-serif' font-size='20'%3E💬 与皮皮聊天%3C/text%3E%3C/svg%3E">
-          <source src="../视频/屏幕录制 2026-06-10 004221.mp4" type="video/mp4">
+          <source src="../视频/屏幕-和皮皮对话.mp4" type="video/mp4">
         </video>
-        <div class="split-note">V11 ✅ · 多轮日常对话录屏</div>
+        <div class="split-note">多轮日常对话录屏</div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ===== SECTION 7: TOUCH ===== -->
+<!-- ===== SECTION 6: TOUCH ===== -->
 <section class="section" id="touch">
   <div class="container">
     <div class="section-header fade-up">
@@ -917,26 +886,26 @@
     </div>
     <div class="split-layout fade-up">
       <div class="split-card">
-        <div class="split-label"><i class="fas fa-hand-pointer"></i> 触摸操作特写 <span class="status-badge status-pending">待替换</span></div>
+        <div class="split-label"><i class="fas fa-hand-pointer"></i> 触摸操作特写</div>
         <video muted loop playsinline autoplay preload="auto"
           poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='400'%3E%3Crect fill='%231e293b' width='640' height='400'/%3E%3Ctext fill='%2394a3b8' x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-family='sans-serif' font-size='20'%3E👆 触摸操作演示%3C/text%3E%3C/svg%3E">
-          <source src="../视频/屏幕录制 2026-06-10 004221.mp4" type="video/mp4">
+          <source src="../视频/实拍-触摸.mp4" type="video/mp4">
         </video>
-        <div class="split-note">V13 · 手指触摸左侧/右侧外壳 · TTP223 模块</div>
+        <div class="split-note">手指触摸左侧/右侧外壳 · TTP223 模块</div>
       </div>
       <div class="split-card">
-        <div class="split-label"><i class="fas fa-face-surprise"></i> 触摸响应效果 <span class="status-badge status-pending">待替换</span></div>
+        <div class="split-label"><i class="fas fa-face-surprise"></i> 触摸响应效果</div>
         <video muted loop playsinline autoplay preload="auto"
           poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='400'%3E%3Crect fill='%231e293b' width='640' height='400'/%3E%3Ctext fill='%2394a3b8' x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-family='sans-serif' font-size='20'%3E🎬 触摸响应效果%3C/text%3E%3C/svg%3E">
-          <source src="../视频/屏幕录制 2026-06-10 004221.mp4" type="video/mp4">
+          <source src="../视频/屏幕-触摸.mp4" type="video/mp4">
         </video>
-        <div class="split-note">V14 · LCD 表情变化 + RGB 灯光响应</div>
+        <div class="split-note">LCD 表情变化 + RGB 灯光响应</div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ===== SECTION 8: ACCELEROMETER ===== -->
+<!-- ===== SECTION 7: ACCELEROMETER ===== -->
 <section class="section section-alt" id="accel">
   <div class="container">
     <div class="section-header fade-up">
@@ -946,26 +915,26 @@
     </div>
     <div class="split-layout fade-up">
       <div class="split-card">
-        <div class="split-label"><i class="fas fa-person-walking"></i> 摇晃 / 倾倒操作 <span class="status-badge status-pending">待替换</span></div>
+        <div class="split-label"><i class="fas fa-person-walking"></i> 摇晃 / 倾倒操作</div>
         <video muted loop playsinline autoplay preload="auto"
           poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='400'%3E%3Crect fill='%231e293b' width='640' height='400'/%3E%3Ctext fill='%2394a3b8' x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-family='sans-serif' font-size='20'%3E🏃 摇晃/倾倒操作%3C/text%3E%3C/svg%3E">
-          <source src="../视频/屏幕录制 2026-06-10 004221.mp4" type="video/mp4">
+          <source src="../视频/实拍-加速度.mp4" type="video/mp4">
         </video>
-        <div class="split-note">V15 · 摇晃触发 SHAKE 事件 · 倾倒触发 TILT 事件</div>
+        <div class="split-note">摇晃触发 SHAKE 事件 · 倾倒触发 TILT 事件</div>
       </div>
       <div class="split-card">
-        <div class="split-label"><i class="fas fa-face-dizzy"></i> 姿态响应效果 <span class="status-badge status-pending">待替换</span></div>
+        <div class="split-label"><i class="fas fa-face-dizzy"></i> 姿态响应效果</div>
         <video muted loop playsinline autoplay preload="auto"
           poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='400'%3E%3Crect fill='%231e293b' width='640' height='400'/%3E%3Ctext fill='%2394a3b8' x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-family='sans-serif' font-size='20'%3E🎬 姿态响应效果%3C/text%3E%3C/svg%3E">
-          <source src="../视频/屏幕录制 2026-06-10 004221.mp4" type="video/mp4">
+          <source src="../视频/屏幕-加速度.mp4" type="video/mp4">
         </video>
-        <div class="split-note">V16 · 摇晃 → surprise · 倾倒 → angry + 红灯闪烁</div>
+        <div class="split-note">摇晃 → surprise · 倾倒 → angry + 红灯闪烁</div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ===== SECTION 9: CAMERA EMOTION ===== -->
+<!-- ===== SECTION 8: CAMERA EMOTION ===== -->
 <section class="section" id="camera">
   <div class="container">
     <div class="section-header fade-up">
@@ -975,20 +944,20 @@
     </div>
     <div class="split-layout fade-up">
       <div class="split-card">
-        <div class="split-label"><i class="fas fa-camera"></i> 摄像头识别界面 <span class="status-badge status-pending">待替换</span></div>
+        <div class="split-label"><i class="fas fa-camera"></i> 摄像头识别界面</div>
         <video muted loop playsinline autoplay preload="auto"
           poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='400'%3E%3Crect fill='%231e293b' width='640' height='400'/%3E%3Ctext fill='%2394a3b8' x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-family='sans-serif' font-size='20'%3E📷 情绪识别演示%3C/text%3E%3C/svg%3E">
-          <source src="../视频/屏幕录制 2026-06-10 004221.mp4" type="video/mp4">
+          <source src="../视频/实拍-用户表情.mp4" type="video/mp4">
         </video>
-        <div class="split-note">V17 · 人脸框 + 情绪标签 (happy/sad/surprise…)</div>
+        <div class="split-note">人脸框 + 情绪标签 (happy/sad/surprise…)</div>
       </div>
       <div class="split-card">
-        <div class="split-label"><i class="fas fa-face-smile-beam"></i> 皮皮情绪回应 <span class="status-badge status-pending">待替换</span></div>
+        <div class="split-label"><i class="fas fa-face-smile-beam"></i> 皮皮情绪回应</div>
         <video muted loop playsinline autoplay preload="auto"
           poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='400'%3E%3Crect fill='%231e293b' width='640' height='400'/%3E%3Ctext fill='%2394a3b8' x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-family='sans-serif' font-size='20'%3E🎬 情绪回应%3C/text%3E%3C/svg%3E">
-          <source src="../视频/屏幕录制 2026-06-10 004221.mp4" type="video/mp4">
+          <source src="../视频/屏幕-用户表情.mp4" type="video/mp4">
         </video>
-        <div class="split-note">V18 · 用户笑→皮皮开心 · 用户皱眉→皮皮关心</div>
+        <div class="split-note">用户笑→皮皮开心 · 用户皱眉→皮皮关心</div>
       </div>
     </div>
     <!-- RGB Light Color Guide -->
@@ -1010,31 +979,66 @@
   </div>
 </section>
 
-<!-- ===== SECTION 10: NFC ===== -->
+<!-- ===== SECTION 9: NFC ===== -->
 <section class="section section-alt" id="nfc">
   <div class="container">
     <div class="section-header fade-up">
-      <span class="section-tag"><i class="fas fa-credit-card"></i> NFC Card Reader</span>
-      <h2>NFC 实体卡片交互</h2>
-      <p class="section-desc">使用 NFC 卡片模拟投喂食物 — 刷卡时长不同触发不同食物类型，皮皮会根据投喂内容做出开心或嫌弃的表情</p>
+      <span class="section-tag"><i class="fas fa-credit-card"></i> NFC Feeding</span>
+      <h2>NFC 卡片投喂</h2>
+      <p class="section-desc">MFRC-522 读卡器识别 NFC 卡片 — 模拟投喂食物，刷卡时长决定食物种类，皮皮做出开心或嫌弃的反应</p>
     </div>
     <div class="split-layout fade-up">
       <div class="split-card">
-        <div class="split-label"><i class="fas fa-credit-card"></i> NFC 刷卡操作 <span class="status-badge status-pending">待替换</span></div>
+        <div class="split-label"><i class="fas fa-credit-card"></i> NFC 喂食操作</div>
         <video muted loop playsinline autoplay preload="auto"
           poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='400'%3E%3Crect fill='%231e293b' width='640' height='400'/%3E%3Ctext fill='%2394a3b8' x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-family='sans-serif' font-size='20'%3E💳 NFC 刷卡演示%3C/text%3E%3C/svg%3E">
-          <source src="../视频/屏幕录制 2026-06-10 004221.mp4" type="video/mp4">
+          <source src="../视频/实拍-喂食.mp4" type="video/mp4">
         </video>
-        <div class="split-note">V19 · ISO14443A S50/S70 卡片靠近识别</div>
+        <div class="split-note">MFRC-522 · ISO14443A · 刷卡时长决定投喂食物种类</div>
       </div>
       <div class="split-card">
-        <div class="split-label"><i class="fas fa-gear"></i> NFC 识别响应 <span class="status-badge status-pending">待替换</span></div>
+        <div class="split-label"><i class="fas fa-gear"></i> 喂食响应效果</div>
         <video muted loop playsinline autoplay preload="auto"
           poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='400'%3E%3Crect fill='%231e293b' width='640' height='400'/%3E%3Ctext fill='%2394a3b8' x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-family='sans-serif' font-size='20'%3E🎬 NFC 响应%3C/text%3E%3C/svg%3E">
-          <source src="../视频/屏幕录制 2026-06-10 004221.mp4" type="video/mp4">
+          <source src="../视频/屏幕-喂食.mp4" type="video/mp4">
         </video>
-        <div class="split-note">V20 · 识别不同卡片 → 切换模式/表情</div>
+        <div class="split-note">LCD 表情变化 + 聊天窗口反馈</div>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SECTION 10: EMOTION DEMO ===== -->
+<section class="section section-alt" id="emotion-demo">
+  <div class="container">
+    <div class="section-header fade-up">
+      <span class="section-tag"><i class="fas fa-chart-line"></i> Emotion Engine</span>
+      <h2>交互与情绪联动</h2>
+      <p class="section-desc">用户行为实时影响皮皮的情绪值，情绪变化驱动表情切换</p>
+    </div>
+    <div class="fade-up" style="display: flex; flex-direction: column; align-items: center; gap: 28px;">
+      <!-- Character -->
+      <div style="display: flex; align-items: center; gap: 32px;">
+        <div style="width: 180px; height: 180px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-lg);">
+          <img id="demoFace" src="../firmware/Assets/faceset/emo_normal_v1.png" style="width: 150px; height: 150px; image-rendering: pixelated;">
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div id="demoExprLabel" style="font-size: 1.4rem; font-weight: 700; color: var(--gray-900); font-family: var(--font-cute);">😐 正常</div>
+          <div id="demoActionLabel" style="font-size: 0.9rem; color: var(--gray-500); font-family: var(--font-ui); max-width: 280px;">系统就绪，等待交互...</div>
+        </div>
+      </div>
+      <!-- Emotion Bar -->
+      <div style="width: 100%; max-width: 560px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.75rem; color: var(--gray-400); font-family: var(--font-ui);">
+          <span>😢</span><span>😐</span><span>😊</span><span>🥰</span>
+        </div>
+        <div style="height: 14px; background: var(--gray-200); border-radius: 7px; overflow: hidden;">
+          <div id="demoEmotionBar" style="height: 100%; width: 50%; background: var(--gradient-primary); border-radius: 7px; transition: width 0.8s ease, background 0.8s ease;"></div>
+        </div>
+        <div id="demoEmotionVal" style="text-align: center; margin-top: 6px; font-size: 0.8rem; color: var(--gray-500); font-family: var(--font-mono);">情绪值 50%</div>
+      </div>
+      <!-- Interaction Icons -->
+      <div id="demoIcons" style="display: flex; gap: 20px; font-size: 2rem; opacity: 0.5; transition: opacity 0.5s;"></div>
     </div>
   </div>
 </section>
@@ -1149,25 +1153,66 @@
     </div>
     <div class="team-grid fade-up">
       <div class="team-card">
-        <div class="team-avatar" style="background: linear-gradient(135deg, #0d9488, #06b6d4);">🐱</div>
-        <h4>pnnooy</h4>
+        <div class="team-avatar"><img src="team_photo/A.jpg" alt="韩宇飞"></div>
+        <h4>韩宇飞</h4>
         <div class="team-role">Project Lead</div>
+        <div class="team-tags">
+          <span class="work-tag">统筹协调</span><span class="work-tag">LCD驱动</span><span class="work-tag">软件I2C</span><span class="work-tag">FSM</span><span class="work-tag">CubeMX</span><span class="work-tag">LLM对话</span><span class="work-tag">情绪识别</span><span class="work-tag">Web API</span><span class="work-tag">展示页</span><span class="work-tag">视频拍摄</span>
+        </div>
       </div>
       <div class="team-card">
-        <div class="team-avatar" style="background: linear-gradient(135deg, #f59e0b, #fbbf24);">🐶</div>
-        <h4>团队成员 B</h4>
-        <div class="team-role">Firmware Dev</div>
+        <div class="team-avatar"><img src="team_photo/B.jpg" alt="李哲"></div>
+        <h4>李哲</h4>
+        <div class="team-role">Firmware Engineer</div>
+        <div class="team-tags">
+          <span class="work-tag">MPU6050</span><span class="work-tag">触摸</span><span class="work-tag">NFC</span><span class="work-tag">UART协议</span><span class="work-tag">串口对接</span><span class="work-tag">AI状态机</span><span class="work-tag">Keil工程</span><span class="work-tag">CubeMX文档</span>
+        </div>
       </div>
       <div class="team-card">
-        <div class="team-avatar" style="background: linear-gradient(135deg, #ef4444, #f87171);">🐰</div>
-        <h4>团队成员 C</h4>
-        <div class="team-role">PC Backend</div>
+        <div class="team-avatar"><img src="team_photo/C.jpg" alt="姜新晨"></div>
+        <h4>姜新晨</h4>
+        <div class="team-role">Hardware & QA</div>
+        <div class="team-tags">
+          <span class="work-tag">RGB LED</span><span class="work-tag">硬件选型</span><span class="work-tag">外设调试</span><span class="work-tag">测试验证</span><span class="work-tag">文档编写</span><span class="work-tag">颜色映射</span><span class="work-tag">串口工具</span><span class="work-tag">素材脚本</span>
+        </div>
       </div>
       <div class="team-card">
-        <div class="team-avatar" style="background: linear-gradient(135deg, #8b5cf6, #a78bfa);">🦊</div>
-        <h4>团队成员 D</h4>
-        <div class="team-role">Frontend & UI</div>
+        <div class="team-avatar"><img src="team_photo/D.jpg" alt="李飞翰"></div>
+        <h4>李飞翰</h4>
+        <div class="team-role">Frontend & Design</div>
+        <div class="team-tags">
+          <span class="work-tag">表情引擎</span><span class="work-tag">表情素材</span><span class="work-tag">聊天UI</span><span class="work-tag">Dashboard</span><span class="work-tag">风格设计</span><span class="work-tag">特效动画</span><span class="work-tag">图标素材</span><span class="work-tag">JS引擎</span>
+        </div>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SECTION 14: ENDING ===== -->
+<section class="section" id="end" style="background: var(--gradient-dark);">
+  <div class="container" style="text-align: center;">
+    <div class="fade-up">
+      <div style="width: 320px; height: 320px; margin: 0 auto 40px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; animation: float 3s ease-in-out infinite; box-shadow: 0 8px 40px rgba(0,0,0,0.3);">
+        <img id="endFace" src="../firmware/Assets/faceset/emo_happy_v1.png" style="width: 170px; height: 170px; image-rendering: pixelated;">
+      </div>
+      <h2 style="font-size: 2rem; font-weight: 700; color: white; font-family: var(--font-heading); margin-bottom: 8px;">智能桌面陪伴宠物</h2>
+      <p style="font-size: 1rem; color: rgba(255,255,255,0.6); font-family: var(--font-cute); margin-bottom: 40px;">Smart Desktop Companion Pet</p>
+      <p style="font-size: 0.9rem; color: rgba(255,255,255,0.45); font-family: var(--font-ui); margin-bottom: 40px;">基于 STM32F103 的多模态桌面交互伴侣 — 会聊天、有表情、懂触摸、能感知</p>
+      <div style="display: flex; justify-content: center; gap: 32px; flex-wrap: wrap; margin-bottom: 48px;">
+        <a href="https://github.com/pnnooy" target="_blank" class="end-link" style="display: flex; flex-direction: column; align-items: center; gap: 10px; color: rgba(255,255,255,0.7); text-decoration: none; transition: all 0.3s; padding: 20px 28px; border-radius: var(--radius-lg); background: rgba(255,255,255,0.06); min-width: 120px;">
+          <i class="fab fa-github" style="font-size: 2.5rem;"></i>
+          <span style="font-family: var(--font-ui); font-size: 0.9rem;">GitHub</span>
+        </a>
+        <a href="mailto:hanyufei24@sjtu.edu.cn" class="end-link" style="display: flex; flex-direction: column; align-items: center; gap: 10px; color: rgba(255,255,255,0.7); text-decoration: none; transition: all 0.3s; padding: 20px 28px; border-radius: var(--radius-lg); background: rgba(255,255,255,0.06); min-width: 120px;">
+          <i class="fas fa-envelope" style="font-size: 2.5rem;"></i>
+          <span style="font-family: var(--font-ui); font-size: 0.9rem;">Contact</span>
+        </a>
+        <a href="#" class="end-link" style="display: flex; flex-direction: column; align-items: center; gap: 10px; color: rgba(255,255,255,0.7); text-decoration: none; transition: all 0.3s; padding: 20px 28px; border-radius: var(--radius-lg); background: rgba(255,255,255,0.06); min-width: 120px;">
+          <i class="fas fa-file-lines" style="font-size: 2.5rem;"></i>
+          <span style="font-family: var(--font-ui); font-size: 0.9rem;">Docs</span>
+        </a>
+      </div>
+      <p style="font-size: 0.85rem; color: rgba(255,255,255,0.35); font-family: var(--font-ui);">© 2026 Desktop Companion Pet · All Rights Reserved</p>
     </div>
   </div>
 </section>
@@ -1186,14 +1231,13 @@ const expressions = {
 };
 
 const facesetBase = '../firmware/Assets/faceset/';
-const placeholderVideo = '../视频/屏幕录制 2026-06-10 004221.mp4';
+const videoBase = '../视频/';
+const lcdVideos = {
+  happy: '实拍-开心.mp4', normal: '实拍-正常.mp4', focus: '实拍-专注.mp4',
+  angry: '实拍-生气.mp4', sleep: '实拍-睡眠.mp4', surprise: '实拍-惊讶.mp4',
+  sad: '实拍-悲伤.mp4', love: '实拍-爱心.mp4'
+};
 
-
-// Auto-hide keyboard hint after 8 seconds
-setTimeout(() => {
-  const hint = document.getElementById('keyboardHint');
-  if (hint) hint.style.opacity = '0';
-}, 8000);
 
 // ===== SCROLL REVEAL =====
 const observer = new IntersectionObserver((entries) => {
@@ -1209,8 +1253,8 @@ document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
 // ===== KEYBOARD NAVIGATION =====
 // Collect all page anchors in order (hero + all sections with ids)
 const pageAnchors = [
-  'hero', 'overview', 'expressions', 'lcd', 'dialogue',
-  'pipi', 'touch', 'accel', 'camera', 'nfc', 'arch', 'tech', 'team'
+  'hero', 'overview', 'expressions', 'lcd',
+  'pipi', 'touch', 'accel', 'camera', 'nfc', 'emotion-demo', 'arch', 'tech', 'team', 'end'
 ];
 
 function getCurrentPageIndex() {
@@ -1329,6 +1373,39 @@ function switchExpression(key) {
   // Pulse animation
   exprDisplay.classList.add('pulse');
   setTimeout(() => exprDisplay.classList.remove('pulse'), 300);
+
+  // Particle burst
+  burstParticles(expr.color);
+}
+
+function burstParticles(color) {
+  const container = exprDisplay;
+  const rect = container.getBoundingClientRect();
+  const cx = rect.width / 2;
+  const cy = rect.height / 2;
+  const count = 24;
+
+  for (let i = 0; i < count; i++) {
+    const particle = document.createElement('div');
+    particle.className = 'burst-particle';
+    const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.4;
+    const distance = 90 + Math.random() * 70;
+    const bx = Math.cos(angle) * distance;
+    const by = Math.sin(angle) * distance;
+    const size = 8 + Math.random() * 10;
+
+    particle.style.cssText = `
+      left: ${cx}px;
+      top: ${cy}px;
+      width: ${size}px;
+      height: ${size}px;
+      background: ${color};
+      --bx: ${bx}px;
+      --by: ${by}px;
+    `;
+    container.appendChild(particle);
+    setTimeout(() => particle.remove(), 700);
+  }
 }
 
 function animateExpression() {
@@ -1374,7 +1451,7 @@ Object.entries(expressions).forEach(([key, val]) => {
     </div>
     <video muted loop playsinline autoplay preload="auto"
       poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect fill='%231e293b' width='200' height='200'/%3E%3Ctext fill='%2394a3b8' x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-family='sans-serif' font-size='24'%3E${val.emoji}%3C/text%3E%3C/svg%3E">
-      <source src="${placeholderVideo}" type="video/mp4">
+      <source src="${videoBase}${lcdVideos[key]}" type="video/mp4">
     </video>
   `;
   lcdGrid.appendChild(card);
@@ -1429,8 +1506,104 @@ Object.entries(expressions).forEach(([key, val]) => {
   draw();
 })();
 
+// ===== EMOTION DEMO AUTO-PLAY SEQUENCE =====
+const demoTimeline = [
+  { t: 0,    expr: 'normal',   val: 50, color: '#0d9488', action: '系统就绪，等待用户交互...',              icon: '💤' },
+  { t: 3000, expr: 'happy',    val: 78, color: '#FFD43B', action: '🖐️ 用户触摸抚摸 → 皮皮感到开心',         icon: '🖐️' },
+  { t: 6000, expr: 'surprise', val: 65, color: '#FFA94D', action: '🏃 检测到摇晃 → 皮皮吓了一跳',            icon: '🏃' },
+  { t: 9000, expr: 'normal',   val: 52, color: '#0d9488', action: '⏳ 摇晃停止 → 情绪逐渐恢复平静',         icon: '💤' },
+  { t: 12000,expr: 'love',     val: 92, color: '#F783AC', action: '💳 NFC刷卡投喂 → 皮皮吃到喜欢的食物',    icon: '💳' },
+  { t: 15000,expr: 'sleep',    val: 30, color: '#7950F2', action: '🌙 长时间无交互 → 皮皮进入休眠',         icon: '🌙' },
+  { t: 18000,expr: 'focus',    val: 60, color: '#4DABF7', action: '💬 用户发起AI对话 → 皮皮专注倾听',       icon: '💬' },
+  { t: 21000,expr: 'happy',    val: 85, color: '#FFD43B', action: '✅ 对话结束 → 皮皮心情愉悦，期待下次互动', icon: '✅' },
+];
+
+let demoSeqIdx = 0;
+let demoFrameIdx = 0;
+let demoAnimTimer = null;
+let demoStartTime = 0;
+
+function runDemoSequence() {
+  const el = document.getElementById('emotion-demo');
+  if (!el) return;
+
+  const rect = el.getBoundingClientRect();
+  const inView = rect.top < window.innerHeight && rect.bottom > 0;
+
+  if (!inView) {
+    demoAnimTimer = requestAnimationFrame(runDemoSequence);
+    return;
+  }
+
+  if (!demoStartTime) demoStartTime = Date.now();
+  const elapsed = Date.now() - demoStartTime;
+
+  // Find current step
+  let step = demoTimeline[0];
+  for (let i = demoTimeline.length - 1; i >= 0; i--) {
+    if (elapsed >= demoTimeline[i].t) { step = demoTimeline[i]; break; }
+  }
+
+  const expr = expressions[step.expr];
+
+  // Update face animation frame
+  const frame = Math.floor(elapsed / 250) % 3;
+  const faceEl = document.getElementById('demoFace');
+  if (faceEl && expr) {
+    faceEl.src = facesetBase + expr.frames[frame];
+  }
+
+  // Update labels
+  const labelEl = document.getElementById('demoExprLabel');
+  if (labelEl && expr) labelEl.textContent = `${expr.emoji} ${expr.name}`;
+
+  const actionEl = document.getElementById('demoActionLabel');
+  if (actionEl) actionEl.textContent = step.action;
+
+  // Update emotion bar
+  const barEl = document.getElementById('demoEmotionBar');
+  if (barEl) {
+    barEl.style.width = step.val + '%';
+    barEl.style.background = step.color;
+  }
+
+  const valEl = document.getElementById('demoEmotionVal');
+  if (valEl) valEl.textContent = '情绪值 ' + step.val + '%';
+
+  // Update interaction icon
+  const iconEl = document.getElementById('demoIcons');
+  if (iconEl) {
+    iconEl.textContent = step.icon;
+    iconEl.style.opacity = '1';
+    iconEl.style.transform = 'scale(1.2)';
+    setTimeout(() => {
+      if (iconEl) { iconEl.style.opacity = '0.5'; iconEl.style.transform = 'scale(1)'; }
+    }, 400);
+  }
+
+  // Loop back after last step
+  if (elapsed > demoTimeline[demoTimeline.length - 1].t + 2500) {
+    demoStartTime = Date.now();
+  }
+
+  demoAnimTimer = requestAnimationFrame(runDemoSequence);
+}
+
+// Start demo when page loads, but only when section is visible
+demoAnimTimer = requestAnimationFrame(runDemoSequence);
+
+// ===== ENDING PAGE FACE ANIMATION =====
+const endFace = document.getElementById('endFace');
+if (endFace) {
+  let endFrame = 0;
+  setInterval(() => {
+    endFrame = (endFrame + 1) % 3;
+    endFace.src = `${facesetBase}emo_happy_v${endFrame + 1}.png`;
+  }, 300);
+}
+
 console.log('🐱 皮皮展示页面加载完成！');
-console.log('📹 视频占位符: ' + placeholderVideo);
+console.log('🎬 所有视频已替换为实拍素材');
 console.log('🎨 表情引擎: 8 表情 × 3 帧动画就绪');
 </script>
 

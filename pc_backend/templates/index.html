@@ -50,6 +50,7 @@
         <div class="card-label"><i class="fas fa-video"></i> 摄像头</div>
         <img id="camera-feed" src="" alt="摄像头" class="camera-feed">
         <div class="camera-status" id="camera-status">OFFLINE</div>
+        <div class="user-emotion" id="user-emotion" style="display:none">你的表情: <span id="user-emotion-label">-</span></div>
       </div>
     </div>
     <div class="right-col">
@@ -96,8 +97,8 @@
         <div class="debug-group">
           <label>RGB</label>
           <div class="debug-rgb">
-            <input type="number" id="debug-r" value="0" min="0" max="255" class="rgb-in">
-            <input type="number" id="debug-g" value="0" min="0" max="255" class="rgb-in">
+            <input type="number" id="debug-r" value="255" min="0" max="255" class="rgb-in">
+            <input type="number" id="debug-g" value="100" min="0" max="255" class="rgb-in">
             <input type="number" id="debug-b" value="0" min="0" max="255" class="rgb-in">
           </div>
         </div>
