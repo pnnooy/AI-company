@@ -287,7 +287,7 @@ CubeMX 重新生成代码会覆盖以下文件，需手动恢复：
 
 - 主分支：`main`
 - 功能开发：`feature/<功能名>` 分支 → PR 合入 main
-- 五人协作，贡献者：pnnooy
+- 四人协作开发
 
 ```bash
 git clone https://github.com/pnnooy/AI-company.git
@@ -298,6 +298,15 @@ git commit -m "描述改动"
 git push origin feature/my-feature
 # 然后在 GitHub 上创建 Pull Request
 ```
+
+## 团队成员与分工
+
+| 代号 | 姓名 | 工作项 |
+|------|------|--------|
+| A | 韩宇飞 | 统筹协调、F1 LCD驱动、F5 软件I2C、F10 主状态机、F11 CubeMX配置、P3 LLM对话、P4 情绪识别、P5 Web API、W3 展示页、H5 视频拍摄 |
+| B | 李哲 | F6 MPU6050、F7 TTP223触摸、F8 MFRC-522 NFC、F9 UART协议、P1 串口对接、P2 AI状态机、B7 Keil工程维护、B8 CubeMX配置文档 |
+| C | 姜新晨 | F4 RGB LED驱动、H1 硬件选型接线、H2 外设调试、H3 测试验证、H4 文档编写、C1 RGB颜色映射、C2 串口工具与环境、C3 素材生成脚本 |
+| D | 李飞翰 | F2 表情引擎、F3 表情素材、W1 聊天界面、W2 Dashboard面板、D1 前端风格设计、D2 展示页特效、D3 图标素材、表情动画JS引擎 |
 
 ## 硬件连接速查
 
