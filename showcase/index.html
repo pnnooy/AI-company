@@ -467,6 +467,62 @@
     }
     .video-card.large video { aspect-ratio: 16 / 10; }
 
+    /* ===== VIDEO COVER (replaces video on GitHub Pages) ===== */
+    .video-cover {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      aspect-ratio: 1 / 1;
+      background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #1e293b 100%);
+      position: relative;
+      overflow: hidden;
+    }
+    .video-cover.large { aspect-ratio: 16 / 10; }
+    .video-cover.chat-cover { aspect-ratio: 16 / 9; }
+    .video-cover::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at center, rgba(13,148,136,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .video-cover .cover-emoji {
+      font-size: 3.5rem;
+      position: relative;
+      z-index: 1;
+    }
+    .video-cover .cover-text {
+      color: rgba(255,255,255,0.7);
+      font-size: 0.85rem;
+      font-family: var(--font-ui);
+      margin-top: 12px;
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 0 16px;
+    }
+    .video-cover .cover-badge {
+      position: absolute;
+      bottom: 12px;
+      right: 14px;
+      color: rgba(255,255,255,0.2);
+      font-size: 0.7rem;
+      font-family: var(--font-cute);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .video-cover img.cover-face {
+      width: 70%;
+      height: 70%;
+      object-fit: contain;
+      image-rendering: pixelated;
+      position: relative;
+      z-index: 1;
+    }
+
     /* ===== SPLIT LAYOUT ===== */
     .split-layout {
       display: grid;
@@ -866,10 +922,11 @@
     <div class="split-layout fade-up" style="grid-template-columns:1fr; max-width:900px; margin:0 auto;">
       <div class="split-card">
         <div class="split-label"><i class="fas fa-desktop"></i> 聊天界面</div>
-        <video muted loop playsinline autoplay preload="auto" style="aspect-ratio: 16 / 9;"
-          poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='400'%3E%3Crect fill='%231e293b' width='640' height='400'/%3E%3Ctext fill='%2394a3b8' x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-family='sans-serif' font-size='20'%3E💬 与皮皮聊天%3C/text%3E%3C/svg%3E">
-          <source src="../视频/屏幕-和皮皮对话.mp4" type="video/mp4">
-        </video>
+        <div class="video-cover chat-cover">
+          <div class="cover-emoji">💬</div>
+          <div class="cover-text">与皮皮对话 — 多轮 AI 对话录屏</div>
+          <div class="cover-badge"><i class="fas fa-image"></i> 演示封面</div>
+        </div>
         <div class="split-note">多轮日常对话录屏</div>
       </div>
     </div>
@@ -887,18 +944,20 @@
     <div class="split-layout fade-up">
       <div class="split-card">
         <div class="split-label"><i class="fas fa-hand-pointer"></i> 触摸操作特写</div>
-        <video muted loop playsinline autoplay preload="auto"
-          poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='400'%3E%3Crect fill='%231e293b' width='640' height='400'/%3E%3Ctext fill='%2394a3b8' x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-family='sans-serif' font-size='20'%3E👆 触摸操作演示%3C/text%3E%3C/svg%3E">
-          <source src="../视频/实拍-触摸.mp4" type="video/mp4">
-        </video>
+        <div class="video-cover large">
+          <div class="cover-emoji">👆</div>
+          <div class="cover-text">手指触摸 TTP223 传感器演示</div>
+          <div class="cover-badge"><i class="fas fa-image"></i> 演示封面</div>
+        </div>
         <div class="split-note">手指触摸左侧/右侧外壳 · TTP223 模块</div>
       </div>
       <div class="split-card">
         <div class="split-label"><i class="fas fa-face-surprise"></i> 触摸响应效果</div>
-        <video muted loop playsinline autoplay preload="auto"
-          poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='400'%3E%3Crect fill='%231e293b' width='640' height='400'/%3E%3Ctext fill='%2394a3b8' x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-family='sans-serif' font-size='20'%3E🎬 触摸响应效果%3C/text%3E%3C/svg%3E">
-          <source src="../视频/屏幕-触摸.mp4" type="video/mp4">
-        </video>
+        <div class="video-cover large">
+          <div class="cover-emoji">🎭</div>
+          <div class="cover-text">LCD 表情 + RGB 灯光变化响应</div>
+          <div class="cover-badge"><i class="fas fa-image"></i> 演示封面</div>
+        </div>
         <div class="split-note">LCD 表情变化 + RGB 灯光响应</div>
       </div>
     </div>
@@ -916,18 +975,20 @@
     <div class="split-layout fade-up">
       <div class="split-card">
         <div class="split-label"><i class="fas fa-person-walking"></i> 摇晃 / 倾倒操作</div>
-        <video muted loop playsinline autoplay preload="auto"
-          poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='400'%3E%3Crect fill='%231e293b' width='640' height='400'/%3E%3Ctext fill='%2394a3b8' x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-family='sans-serif' font-size='20'%3E🏃 摇晃/倾倒操作%3C/text%3E%3C/svg%3E">
-          <source src="../视频/实拍-加速度.mp4" type="video/mp4">
-        </video>
+        <div class="video-cover large">
+          <div class="cover-emoji">🏃</div>
+          <div class="cover-text">摇晃触发 SHAKE · 倾倒触发 TILT 事件</div>
+          <div class="cover-badge"><i class="fas fa-image"></i> 演示封面</div>
+        </div>
         <div class="split-note">摇晃触发 SHAKE 事件 · 倾倒触发 TILT 事件</div>
       </div>
       <div class="split-card">
         <div class="split-label"><i class="fas fa-face-dizzy"></i> 姿态响应效果</div>
-        <video muted loop playsinline autoplay preload="auto"
-          poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='400'%3E%3Crect fill='%231e293b' width='640' height='400'/%3E%3Ctext fill='%2394a3b8' x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-family='sans-serif' font-size='20'%3E🎬 姿态响应效果%3C/text%3E%3C/svg%3E">
-          <source src="../视频/屏幕-加速度.mp4" type="video/mp4">
-        </video>
+        <div class="video-cover large">
+          <div class="cover-emoji">😲</div>
+          <div class="cover-text">摇晃→surprise · 倾倒→angry+红灯</div>
+          <div class="cover-badge"><i class="fas fa-image"></i> 演示封面</div>
+        </div>
         <div class="split-note">摇晃 → surprise · 倾倒 → angry + 红灯闪烁</div>
       </div>
     </div>
@@ -945,18 +1006,20 @@
     <div class="split-layout fade-up">
       <div class="split-card">
         <div class="split-label"><i class="fas fa-camera"></i> 摄像头识别界面</div>
-        <video muted loop playsinline autoplay preload="auto"
-          poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='400'%3E%3Crect fill='%231e293b' width='640' height='400'/%3E%3Ctext fill='%2394a3b8' x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-family='sans-serif' font-size='20'%3E📷 情绪识别演示%3C/text%3E%3C/svg%3E">
-          <source src="../视频/实拍-用户表情.mp4" type="video/mp4">
-        </video>
+        <div class="video-cover large">
+          <div class="cover-emoji">📷</div>
+          <div class="cover-text">人脸检测 + 情绪标签实时显示</div>
+          <div class="cover-badge"><i class="fas fa-image"></i> 演示封面</div>
+        </div>
         <div class="split-note">人脸框 + 情绪标签 (happy/sad/surprise…)</div>
       </div>
       <div class="split-card">
         <div class="split-label"><i class="fas fa-face-smile-beam"></i> 皮皮情绪回应</div>
-        <video muted loop playsinline autoplay preload="auto"
-          poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='400'%3E%3Crect fill='%231e293b' width='640' height='400'/%3E%3Ctext fill='%2394a3b8' x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-family='sans-serif' font-size='20'%3E🎬 情绪回应%3C/text%3E%3C/svg%3E">
-          <source src="../视频/屏幕-用户表情.mp4" type="video/mp4">
-        </video>
+        <div class="video-cover large">
+          <div class="cover-emoji">😊</div>
+          <div class="cover-text">用户笑→皮皮开心 · 皱眉→皮皮关心</div>
+          <div class="cover-badge"><i class="fas fa-image"></i> 演示封面</div>
+        </div>
         <div class="split-note">用户笑→皮皮开心 · 用户皱眉→皮皮关心</div>
       </div>
     </div>
@@ -990,18 +1053,20 @@
     <div class="split-layout fade-up">
       <div class="split-card">
         <div class="split-label"><i class="fas fa-credit-card"></i> NFC 喂食操作</div>
-        <video muted loop playsinline autoplay preload="auto"
-          poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='400'%3E%3Crect fill='%231e293b' width='640' height='400'/%3E%3Ctext fill='%2394a3b8' x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-family='sans-serif' font-size='20'%3E💳 NFC 刷卡演示%3C/text%3E%3C/svg%3E">
-          <source src="../视频/实拍-喂食.mp4" type="video/mp4">
-        </video>
+        <div class="video-cover large">
+          <div class="cover-emoji">💳</div>
+          <div class="cover-text">MFRC-522 · 刷卡时长决定食物种类</div>
+          <div class="cover-badge"><i class="fas fa-image"></i> 演示封面</div>
+        </div>
         <div class="split-note">MFRC-522 · ISO14443A · 刷卡时长决定投喂食物种类</div>
       </div>
       <div class="split-card">
         <div class="split-label"><i class="fas fa-gear"></i> 喂食响应效果</div>
-        <video muted loop playsinline autoplay preload="auto"
-          poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='400'%3E%3Crect fill='%231e293b' width='640' height='400'/%3E%3Ctext fill='%2394a3b8' x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-family='sans-serif' font-size='20'%3E🎬 NFC 响应%3C/text%3E%3C/svg%3E">
-          <source src="../视频/屏幕-喂食.mp4" type="video/mp4">
-        </video>
+        <div class="video-cover large">
+          <div class="cover-emoji">🍔</div>
+          <div class="cover-text">LCD 表情 + 聊天窗口反馈</div>
+          <div class="cover-badge"><i class="fas fa-image"></i> 演示封面</div>
+        </div>
         <div class="split-note">LCD 表情变化 + 聊天窗口反馈</div>
       </div>
     </div>
@@ -1231,13 +1296,6 @@ const expressions = {
 };
 
 const facesetBase = '../firmware/Assets/faceset/';
-const videoBase = '../视频/';
-const lcdVideos = {
-  happy: '实拍-开心.mp4', normal: '实拍-正常.mp4', focus: '实拍-专注.mp4',
-  angry: '实拍-生气.mp4', sleep: '实拍-睡眠.mp4', surprise: '实拍-惊讶.mp4',
-  sad: '实拍-悲伤.mp4', love: '实拍-爱心.mp4'
-};
-
 
 // ===== SCROLL REVEAL =====
 const observer = new IntersectionObserver((entries) => {
@@ -1449,10 +1507,10 @@ Object.entries(expressions).forEach(([key, val]) => {
       <span class="emo-dot" style="background:${lcdColors[key]};"></span>
       ${val.emoji} ${val.name} ${val.en}
     </div>
-    <video muted loop playsinline autoplay preload="auto"
-      poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect fill='%231e293b' width='200' height='200'/%3E%3Ctext fill='%2394a3b8' x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-family='sans-serif' font-size='24'%3E${val.emoji}%3C/text%3E%3C/svg%3E">
-      <source src="${videoBase}${lcdVideos[key]}" type="video/mp4">
-    </video>
+    <div class="video-cover" style="background:#0f172a;">
+      <img class="cover-face" src="${facesetBase}emo_${key}_v1.png"
+           alt="${val.name}" onerror="this.parentElement.innerHTML='<div class=cover-emoji>${val.emoji}</div><div class=cover-text>${val.name} 表情演示</div><div class=cover-badge><i class=\\'fas fa-image\\'></i> 演示封面</div>'">
+    </div>
   `;
   lcdGrid.appendChild(card);
 });
@@ -1603,7 +1661,7 @@ if (endFace) {
 }
 
 console.log('🐱 皮皮展示页面加载完成！');
-console.log('🎬 所有视频已替换为实拍素材');
+console.log('🖼️ 视频占位已替换为封面图');
 console.log('🎨 表情引擎: 8 表情 × 3 帧动画就绪');
 </script>
 
