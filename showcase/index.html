@@ -522,6 +522,18 @@
       position: relative;
       z-index: 1;
     }
+    img.cover-img {
+      width: 100%;
+      display: block;
+      aspect-ratio: 16 / 10;
+      object-fit: cover;
+    }
+    img.cover-img-large {
+      width: 100%;
+      display: block;
+      aspect-ratio: 16 / 9;
+      object-fit: cover;
+    }
 
     /* ===== SPLIT LAYOUT ===== */
     .split-layout {
@@ -922,11 +934,7 @@
     <div class="split-layout fade-up" style="grid-template-columns:1fr; max-width:900px; margin:0 auto;">
       <div class="split-card">
         <div class="split-label"><i class="fas fa-desktop"></i> 聊天界面</div>
-        <div class="video-cover chat-cover">
-          <div class="cover-emoji">💬</div>
-          <div class="cover-text">与皮皮对话 — 多轮 AI 对话录屏</div>
-          <div class="cover-badge"><i class="fas fa-image"></i> 演示封面</div>
-        </div>
+        <img class="cover-img-large" src="covers/cover-chat.png" alt="与皮皮对话">
         <div class="split-note">多轮日常对话录屏</div>
       </div>
     </div>
@@ -944,20 +952,12 @@
     <div class="split-layout fade-up">
       <div class="split-card">
         <div class="split-label"><i class="fas fa-hand-pointer"></i> 触摸操作特写</div>
-        <div class="video-cover large">
-          <div class="cover-emoji">👆</div>
-          <div class="cover-text">手指触摸 TTP223 传感器演示</div>
-          <div class="cover-badge"><i class="fas fa-image"></i> 演示封面</div>
-        </div>
+        <img class="cover-img" src="covers/cover-touch-demo.png" alt="触摸传感器操作">
         <div class="split-note">手指触摸左侧/右侧外壳 · TTP223 模块</div>
       </div>
       <div class="split-card">
         <div class="split-label"><i class="fas fa-face-surprise"></i> 触摸响应效果</div>
-        <div class="video-cover large">
-          <div class="cover-emoji">🎭</div>
-          <div class="cover-text">LCD 表情 + RGB 灯光变化响应</div>
-          <div class="cover-badge"><i class="fas fa-image"></i> 演示封面</div>
-        </div>
+        <img class="cover-img" src="covers/cover-touch-effect.png" alt="触摸响应效果">
         <div class="split-note">LCD 表情变化 + RGB 灯光响应</div>
       </div>
     </div>
@@ -975,20 +975,12 @@
     <div class="split-layout fade-up">
       <div class="split-card">
         <div class="split-label"><i class="fas fa-person-walking"></i> 摇晃 / 倾倒操作</div>
-        <div class="video-cover large">
-          <div class="cover-emoji">🏃</div>
-          <div class="cover-text">摇晃触发 SHAKE · 倾倒触发 TILT 事件</div>
-          <div class="cover-badge"><i class="fas fa-image"></i> 演示封面</div>
-        </div>
+        <img class="cover-img" src="covers/cover-accel-demo.png" alt="摇晃倾倒操作">
         <div class="split-note">摇晃触发 SHAKE 事件 · 倾倒触发 TILT 事件</div>
       </div>
       <div class="split-card">
         <div class="split-label"><i class="fas fa-face-dizzy"></i> 姿态响应效果</div>
-        <div class="video-cover large">
-          <div class="cover-emoji">😲</div>
-          <div class="cover-text">摇晃→surprise · 倾倒→angry+红灯</div>
-          <div class="cover-badge"><i class="fas fa-image"></i> 演示封面</div>
-        </div>
+        <img class="cover-img" src="covers/cover-accel-effect.png" alt="姿态响应效果">
         <div class="split-note">摇晃 → surprise · 倾倒 → angry + 红灯闪烁</div>
       </div>
     </div>
@@ -1006,20 +998,12 @@
     <div class="split-layout fade-up">
       <div class="split-card">
         <div class="split-label"><i class="fas fa-camera"></i> 摄像头识别界面</div>
-        <div class="video-cover large">
-          <div class="cover-emoji">📷</div>
-          <div class="cover-text">人脸检测 + 情绪标签实时显示</div>
-          <div class="cover-badge"><i class="fas fa-image"></i> 演示封面</div>
-        </div>
+        <img class="cover-img" src="covers/cover-camera-demo.png" alt="摄像头情绪识别">
         <div class="split-note">人脸框 + 情绪标签 (happy/sad/surprise…)</div>
       </div>
       <div class="split-card">
         <div class="split-label"><i class="fas fa-face-smile-beam"></i> 皮皮情绪回应</div>
-        <div class="video-cover large">
-          <div class="cover-emoji">😊</div>
-          <div class="cover-text">用户笑→皮皮开心 · 皱眉→皮皮关心</div>
-          <div class="cover-badge"><i class="fas fa-image"></i> 演示封面</div>
-        </div>
+        <img class="cover-img" src="covers/cover-camera-effect.png" alt="皮皮情绪回应">
         <div class="split-note">用户笑→皮皮开心 · 用户皱眉→皮皮关心</div>
       </div>
     </div>
@@ -1053,20 +1037,12 @@
     <div class="split-layout fade-up">
       <div class="split-card">
         <div class="split-label"><i class="fas fa-credit-card"></i> NFC 喂食操作</div>
-        <div class="video-cover large">
-          <div class="cover-emoji">💳</div>
-          <div class="cover-text">MFRC-522 · 刷卡时长决定食物种类</div>
-          <div class="cover-badge"><i class="fas fa-image"></i> 演示封面</div>
-        </div>
+        <img class="cover-img" src="covers/cover-nfc-demo.png" alt="NFC卡片投喂">
         <div class="split-note">MFRC-522 · ISO14443A · 刷卡时长决定投喂食物种类</div>
       </div>
       <div class="split-card">
         <div class="split-label"><i class="fas fa-gear"></i> 喂食响应效果</div>
-        <div class="video-cover large">
-          <div class="cover-emoji">🍔</div>
-          <div class="cover-text">LCD 表情 + 聊天窗口反馈</div>
-          <div class="cover-badge"><i class="fas fa-image"></i> 演示封面</div>
-        </div>
+        <img class="cover-img" src="covers/cover-nfc-effect.png" alt="喂食响应效果">
         <div class="split-note">LCD 表情变化 + 聊天窗口反馈</div>
       </div>
     </div>
