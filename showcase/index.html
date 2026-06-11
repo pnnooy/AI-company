@@ -467,72 +467,368 @@
     }
     .video-card.large video { aspect-ratio: 16 / 10; }
 
-    /* ===== VIDEO COVER (replaces video on GitHub Pages) ===== */
-    .video-cover {
+    /* ===== DEMO ANIMATIONS ===== */
+    .demo-anim {
       width: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      aspect-ratio: 1 / 1;
-      background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #1e293b 100%);
+      aspect-ratio: 16 / 10;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
       position: relative;
       overflow: hidden;
-    }
-    .video-cover.large { aspect-ratio: 16 / 10; }
-    .video-cover.chat-cover { aspect-ratio: 16 / 9; }
-    .video-cover::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(ellipse at center, rgba(13,148,136,0.08) 0%, transparent 70%);
-      pointer-events: none;
-    }
-    .video-cover .cover-emoji {
-      font-size: 3.5rem;
-      position: relative;
-      z-index: 1;
-    }
-    .video-cover .cover-text {
-      color: rgba(255,255,255,0.7);
-      font-size: 0.85rem;
-      font-family: var(--font-ui);
-      margin-top: 12px;
-      position: relative;
-      z-index: 1;
-      text-align: center;
-      padding: 0 16px;
-    }
-    .video-cover .cover-badge {
-      position: absolute;
-      bottom: 12px;
-      right: 14px;
-      color: rgba(255,255,255,0.2);
-      font-size: 0.7rem;
-      font-family: var(--font-cute);
       display: flex;
       align-items: center;
-      gap: 4px;
+      justify-content: center;
+      border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+    }
+    .demo-anim.chat { aspect-ratio: 16 / 9; }
+
+    /* LCD grid face cards */
+    .video-cover {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 0 0 var(--radius-xl) var(--radius-xl);
     }
     .video-cover img.cover-face {
       width: 70%;
       height: 70%;
       object-fit: contain;
       image-rendering: pixelated;
+    }
+
+    /* -- Chat bubbles -- */
+    .chat-mock {
+      width: 85%;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .chat-msg {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      opacity: 0;
+      animation: msgIn 0.5s ease forwards;
+    }
+    .chat-msg:nth-child(1) { animation-delay: 0s; }
+    .chat-msg:nth-child(2) { animation-delay: 2s; }
+    .chat-msg:nth-child(3) { animation-delay: 4s; }
+    .chat-msg:nth-child(4) { animation-delay: 6s; }
+    .chat-msg:nth-child(5) { animation-delay: 8s; }
+    .chat-msg.bot .chat-avatar {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      flex-shrink: 0;
+    }
+    .chat-msg.bot .chat-bubble {
+      background: #334155;
+      color: #e2e8f0;
+      padding: 8px 14px;
+      border-radius: 4px 16px 16px 16px;
+      font-size: 0.75rem;
+      font-family: var(--font-ui);
+      max-width: 70%;
+    }
+    .chat-msg.user {
+      flex-direction: row-reverse;
+    }
+    .chat-msg.user .chat-bubble {
+      background: var(--primary);
+      color: white;
+      padding: 8px 14px;
+      border-radius: 16px 4px 16px 16px;
+      font-size: 0.75rem;
+      font-family: var(--font-ui);
+      max-width: 70%;
+    }
+    @keyframes msgIn {
+      0% { opacity: 0; transform: translateY(10px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    /* -- Touch sensor -- */
+    .touch-sensor-area {
       position: relative;
-      z-index: 1;
+      width: 120px; height: 120px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #1e3a3a 0%, #0f172a 70%);
+      border: 3px solid #334155;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
     }
-    img.cover-img {
-      width: 100%;
-      display: block;
-      aspect-ratio: 16 / 10;
-      object-fit: cover;
+    .touch-sensor-area .finger {
+      position: absolute;
+      font-size: 2rem;
+      animation: fingerTap 2.5s ease-in-out infinite;
+      z-index: 2;
     }
-    img.cover-img-large {
-      width: 100%;
-      display: block;
-      aspect-ratio: 16 / 9;
-      object-fit: cover;
+    .touch-sensor-area .ripple {
+      position: absolute;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      border: 2px solid var(--primary-light);
+      animation: rippleOut 2.5s ease-out infinite;
+    }
+    .touch-sensor-area .ripple:nth-child(3) { animation-delay: 0.15s; }
+    .touch-sensor-area .ripple:nth-child(4) { animation-delay: 0.3s; }
+    @keyframes fingerTap {
+      0%, 100% { transform: translateY(20px); opacity: 0; }
+      30%, 50% { transform: translateY(0); opacity: 1; }
+      80% { transform: translateY(-5px); opacity: 0.5; }
+    }
+    @keyframes rippleOut {
+      0% { width: 10px; height: 10px; opacity: 0.8; }
+      100% { width: 150px; height: 150px; opacity: 0; }
+    }
+
+    /* -- Touch effect split -- */
+    .touch-effect-split {
+      display: flex;
+      width: 90%;
+      gap: 20px;
+      align-items: center;
+    }
+    .mini-face {
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: faceSwitch 4s ease-in-out infinite;
+    }
+    .mini-face img {
+      width: 60px; height: 60px;
+      image-rendering: pixelated;
+    }
+    .mini-led {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: #FFD43B;
+      box-shadow: 0 0 30px #FFD43B;
+      animation: ledGlow 4s ease-in-out infinite;
+    }
+    @keyframes faceSwitch {
+      0%, 40% { background: white; }
+      50%, 90% { background: #fff3cd; }
+    }
+    @keyframes ledGlow {
+      0%, 20% { box-shadow: 0 0 10px #334155; background: #334155; }
+      50%, 100% { box-shadow: 0 0 40px #FFD43B; background: #FFD43B; }
+    }
+
+    /* -- Accelerometer -- */
+    .accel-box {
+      width: 100px; height: 100px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      border-radius: 16px;
+      animation: boxShake 3s ease-in-out infinite;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      color: white;
+      font-family: var(--font-ui);
+    }
+    .accel-box::after {
+      content: '';
+      position: absolute;
+      inset: -8px;
+      border: 2px dashed rgba(13,148,136,0.3);
+      border-radius: 20px;
+    }
+    @keyframes boxShake {
+      0%, 100% { transform: rotate(0deg) translateY(0); }
+      5%, 15% { transform: rotate(3deg) translateY(-8px); }
+      20%, 30% { transform: rotate(-2deg) translateY(-4px); }
+      35%, 45% { transform: rotate(2deg) translateY(-10px); }
+      50% { transform: rotate(-1deg) translateY(-2px); }
+      55%, 65% { transform: rotate(15deg) translateY(0); }
+      70%, 85% { transform: rotate(-10deg) translateY(5px); }
+    }
+    .accel-label {
+      position: absolute;
+      bottom: 20px;
+      font-size: 0.8rem;
+      color: #94a3b8;
+      font-family: var(--font-ui);
+      animation: labelSwitch 3s ease-in-out infinite;
+    }
+    @keyframes labelSwitch {
+      0%, 45% { content: "SHAKE"; color: #FFA94D; }
+      55%, 95% { content: "TILT"; color: #FF6B6B; }
+    }
+
+    /* -- Camera scan -- */
+    .camera-scan {
+      position: relative;
+      width: 140px; height: 160px;
+      border: 3px solid rgba(13,148,136,0.4);
+      border-radius: 20px;
+      overflow: hidden;
+    }
+    .camera-scan .face-outline {
+      position: absolute;
+      inset: 20px;
+      border: 2px dashed rgba(255,255,255,0.3);
+      border-radius: 50%;
+    }
+    .camera-scan .scan-line {
+      position: absolute;
+      left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--primary-light), transparent);
+      animation: scanDown 2s linear infinite;
+    }
+    .camera-scan .emotion-tag {
+      position: absolute;
+      bottom: 8px; left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.7);
+      color: var(--primary-light);
+      padding: 2px 10px;
+      border-radius: 10px;
+      font-size: 0.7rem;
+      font-family: var(--font-mono);
+      white-space: nowrap;
+      animation: tagChange 6s ease-in-out infinite;
+    }
+    @keyframes scanDown {
+      0% { top: 10%; }
+      50% { top: 80%; }
+      100% { top: 10%; }
+    }
+    @keyframes tagChange {
+      0%, 15% { content: "neutral"; color: #94a3b8; }
+      20%, 35% { content: "happy"; color: #FFD43B; }
+      40%, 55% { content: "surprise"; color: #FFA94D; }
+      60%, 75% { content: "sad"; color: #74C0FC; }
+      80%, 100% { content: "neutral"; color: #94a3b8; }
+    }
+
+    /* -- Camera react -- */
+    .camera-react {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+    .camera-react .react-face {
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: reactBounce 6s ease-in-out infinite;
+    }
+    .camera-react .react-face img {
+      width: 60px; height: 60px;
+      image-rendering: pixelated;
+    }
+    .camera-react .react-arrow {
+      font-size: 1.5rem;
+      color: #94a3b8;
+      animation: arrowPulse 6s ease-in-out infinite;
+    }
+    @keyframes reactBounce {
+      0%, 20% { transform: scale(1); }
+      25%, 45% { transform: scale(1.15); background: #fffbeb; }
+      50%, 70% { transform: scale(1); }
+      75%, 95% { transform: scale(1.1); background: #f0fdfa; }
+    }
+    @keyframes arrowPulse {
+      0%, 20% { opacity: 0.3; }
+      25%, 45% { opacity: 1; }
+      50%, 70% { opacity: 0.3; }
+      75%, 95% { opacity: 1; }
+    }
+
+    /* -- NFC tap -- */
+    .nfc-scene {
+      position: relative;
+      width: 200px; height: 120px;
+    }
+    .nfc-reader {
+      position: absolute;
+      left: 20px; top: 50%;
+      transform: translateY(-50%);
+      width: 70px; height: 70px;
+      background: #1e3a3a;
+      border-radius: 12px;
+      border: 2px solid #334155;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .nfc-reader .wave {
+      position: absolute;
+      border: 2px solid rgba(13,148,136,0.4);
+      border-radius: 50%;
+      animation: waveOut 2s ease-out infinite;
+    }
+    .nfc-reader .wave:nth-child(2) { animation-delay: 0.5s; }
+    .nfc-reader .wave:nth-child(3) { animation-delay: 1s; }
+    .nfc-card {
+      position: absolute;
+      right: 20px; top: 50%;
+      transform: translateY(-50%);
+      width: 55px; height: 35px;
+      background: linear-gradient(135deg, #f59e0b, #fbbf24);
+      border-radius: 4px;
+      animation: cardSwipe 2.5s ease-in-out infinite;
+      box-shadow: 0 2px 10px rgba(245,158,11,0.3);
+    }
+    @keyframes waveOut {
+      0% { width: 10px; height: 10px; opacity: 1; }
+      100% { width: 80px; height: 80px; opacity: 0; }
+    }
+    @keyframes cardSwipe {
+      0%, 100% { transform: translateY(-50%) translateX(0); opacity: 1; }
+      40%, 60% { transform: translateY(-50%) translateX(-40px); opacity: 1; }
+      50% { transform: translateY(-50%) translateX(-40px); opacity: 0.6; }
+    }
+
+    /* -- NFC react -- */
+    .nfc-react-scene {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .nfc-react-scene .food-emoji {
+      font-size: 2.5rem;
+      animation: foodFloat 2s ease-out infinite;
+    }
+    .nfc-react-scene .nfc-face {
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: nfcLovePulse 2s ease-in-out infinite;
+    }
+    .nfc-react-scene .nfc-face img {
+      width: 60px; height: 60px;
+      image-rendering: pixelated;
+    }
+    @keyframes foodFloat {
+      0% { transform: translateY(0) scale(0.5); opacity: 1; }
+      100% { transform: translateY(-60px) scale(1.2); opacity: 0; }
+    }
+    @keyframes nfcLovePulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.15); background: #fce4ec; }
     }
 
     /* ===== SPLIT LAYOUT ===== */
@@ -934,7 +1230,15 @@
     <div class="split-layout fade-up" style="grid-template-columns:1fr; max-width:900px; margin:0 auto;">
       <div class="split-card">
         <div class="split-label"><i class="fas fa-desktop"></i> 聊天界面</div>
-        <img class="cover-img-large" src="covers/cover-chat.png" alt="与皮皮对话">
+        <div class="demo-anim chat">
+          <div class="chat-mock">
+            <div class="chat-msg bot"><div class="chat-avatar">🐱</div><div class="chat-bubble">你好呀！我是皮皮~</div></div>
+            <div class="chat-msg user"><div class="chat-bubble">今天天气真好</div></div>
+            <div class="chat-msg bot"><div class="chat-avatar">🐱</div><div class="chat-bubble">是的！出去走走对眼睛好哦</div></div>
+            <div class="chat-msg user"><div class="chat-bubble">那我走啦</div></div>
+            <div class="chat-msg bot"><div class="chat-avatar">🐱</div><div class="chat-bubble">注意安全，早点回来~ ❤️</div></div>
+          </div>
+        </div>
         <div class="split-note">多轮日常对话录屏</div>
       </div>
     </div>
@@ -952,12 +1256,28 @@
     <div class="split-layout fade-up">
       <div class="split-card">
         <div class="split-label"><i class="fas fa-hand-pointer"></i> 触摸操作特写</div>
-        <img class="cover-img" src="covers/cover-touch-demo.png" alt="触摸传感器操作">
+        <div class="demo-anim">
+          <div class="touch-sensor-area">
+            <div class="finger">👆</div>
+            <div class="ripple"></div>
+            <div class="ripple"></div>
+            <div class="ripple"></div>
+            <span style="color:#94a3b8;font-size:0.8rem;font-family:var(--font-ui);z-index:1;">TTP223</span>
+          </div>
+          <span style="position:absolute;bottom:16px;right:20px;font-size:0.7rem;color:#64748b;font-family:var(--font-ui);">左/右 传感器</span>
+        </div>
         <div class="split-note">手指触摸左侧/右侧外壳 · TTP223 模块</div>
       </div>
       <div class="split-card">
         <div class="split-label"><i class="fas fa-face-surprise"></i> 触摸响应效果</div>
-        <img class="cover-img" src="covers/cover-touch-effect.png" alt="触摸响应效果">
+        <div class="demo-anim">
+          <div class="touch-effect-split">
+            <div class="mini-face"><img src="../firmware/Assets/faceset/emo_happy_v1.png" alt="happy"></div>
+            <span style="color:#94a3b8;font-size:1.2rem;">→</span>
+            <div class="mini-led"></div>
+          </div>
+          <span style="position:absolute;bottom:12px;font-size:0.7rem;color:#94a3b8;font-family:var(--font-ui);">LCD 表情 + RGB 灯光联动</span>
+        </div>
         <div class="split-note">LCD 表情变化 + RGB 灯光响应</div>
       </div>
     </div>
@@ -975,12 +1295,34 @@
     <div class="split-layout fade-up">
       <div class="split-card">
         <div class="split-label"><i class="fas fa-person-walking"></i> 摇晃 / 倾倒操作</div>
-        <img class="cover-img" src="covers/cover-accel-demo.png" alt="摇晃倾倒操作">
+        <div class="demo-anim">
+          <div class="accel-box">MPU6050</div>
+          <span class="accel-label" id="accelLabel">SHAKE</span>
+          <div style="position:absolute;top:12px;right:16px;display:flex;gap:4px;font-size:0.65rem;color:#64748b;font-family:var(--font-mono);">
+            <span>X</span><span>Y</span><span>Z</span>
+          </div>
+        </div>
         <div class="split-note">摇晃触发 SHAKE 事件 · 倾倒触发 TILT 事件</div>
       </div>
       <div class="split-card">
         <div class="split-label"><i class="fas fa-face-dizzy"></i> 姿态响应效果</div>
-        <img class="cover-img" src="covers/cover-accel-effect.png" alt="姿态响应效果">
+        <div class="demo-anim">
+          <div style="display:flex;align-items:center;gap:20px;">
+            <div style="text-align:center;">
+              <div style="background:white;border-radius:50%;width:70px;height:70px;display:flex;align-items:center;justify-content:center;margin-bottom:6px;" id="accelFace">
+                <img src="../firmware/Assets/faceset/emo_normal_v1.png" style="width:55px;height:55px;image-rendering:pixelated;">
+              </div>
+              <span style="font-size:0.65rem;color:#94a3b8;font-family:var(--font-ui);">正常</span>
+            </div>
+            <span style="font-size:1.5rem;color:#64748b;">→</span>
+            <div style="text-align:center;">
+              <div id="accelReactFace" style="background:white;border-radius:50%;width:70px;height:70px;display:flex;align-items:center;justify-content:center;margin-bottom:6px;">
+                <img src="../firmware/Assets/faceset/emo_surprise_v1.png" style="width:55px;height:55px;image-rendering:pixelated;">
+              </div>
+              <span id="accelReactLabel" style="font-size:0.65rem;color:#FFA94D;font-family:var(--font-ui);">惊讶</span>
+            </div>
+          </div>
+        </div>
         <div class="split-note">摇晃 → surprise · 倾倒 → angry + 红灯闪烁</div>
       </div>
     </div>
@@ -998,12 +1340,31 @@
     <div class="split-layout fade-up">
       <div class="split-card">
         <div class="split-label"><i class="fas fa-camera"></i> 摄像头识别界面</div>
-        <img class="cover-img" src="covers/cover-camera-demo.png" alt="摄像头情绪识别">
+        <div class="demo-anim">
+          <div class="camera-scan">
+            <div class="face-outline"></div>
+            <div class="scan-line"></div>
+            <div class="emotion-tag" id="emotionTag">neutral</div>
+            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:3rem;opacity:0.3;">😐</div>
+          </div>
+        </div>
         <div class="split-note">人脸框 + 情绪标签 (happy/sad/surprise…)</div>
       </div>
       <div class="split-card">
         <div class="split-label"><i class="fas fa-face-smile-beam"></i> 皮皮情绪回应</div>
-        <img class="cover-img" src="covers/cover-camera-effect.png" alt="皮皮情绪回应">
+        <div class="demo-anim">
+          <div class="camera-react">
+            <div style="text-align:center;">
+              <span style="font-size:2.5rem;display:block;">😊</span>
+              <span style="font-size:0.65rem;color:#94a3b8;font-family:var(--font-ui);">用户</span>
+            </div>
+            <div class="react-arrow">→</div>
+            <div class="react-face">
+              <img id="cameraReactFace" src="../firmware/Assets/faceset/emo_happy_v1.png" alt="react">
+            </div>
+          </div>
+          <span style="position:absolute;bottom:12px;font-size:0.7rem;color:#94a3b8;font-family:var(--font-ui);">表情联动：用户笑 → 皮皮开心</span>
+        </div>
         <div class="split-note">用户笑→皮皮开心 · 用户皱眉→皮皮关心</div>
       </div>
     </div>
@@ -1037,12 +1398,33 @@
     <div class="split-layout fade-up">
       <div class="split-card">
         <div class="split-label"><i class="fas fa-credit-card"></i> NFC 喂食操作</div>
-        <img class="cover-img" src="covers/cover-nfc-demo.png" alt="NFC卡片投喂">
+        <div class="demo-anim">
+          <div class="nfc-scene">
+            <div class="nfc-reader">
+              <span style="font-size:0.6rem;color:#94a3b8;font-family:var(--font-mono);">MFRC522</span>
+              <div class="wave"></div>
+              <div class="wave"></div>
+              <div class="wave"></div>
+            </div>
+            <div class="nfc-card"></div>
+          </div>
+          <span style="position:absolute;bottom:12px;font-size:0.7rem;color:#94a3b8;font-family:var(--font-ui);">MFRC-522 · ISO14443A 刷卡</span>
+        </div>
         <div class="split-note">MFRC-522 · ISO14443A · 刷卡时长决定投喂食物种类</div>
       </div>
       <div class="split-card">
         <div class="split-label"><i class="fas fa-gear"></i> 喂食响应效果</div>
-        <img class="cover-img" src="covers/cover-nfc-effect.png" alt="喂食响应效果">
+        <div class="demo-anim">
+          <div class="nfc-react-scene">
+            <div class="food-emoji" id="nfcFood1" style="animation-delay:0s;">🍎</div>
+            <div class="food-emoji" id="nfcFood2" style="animation-delay:0.6s;">🍕</div>
+            <div class="nfc-face">
+              <img src="../firmware/Assets/faceset/emo_love_v1.png" alt="love">
+            </div>
+            <div class="food-emoji" id="nfcFood3" style="animation-delay:1.2s;">🎂</div>
+          </div>
+          <span style="position:absolute;bottom:12px;font-size:0.7rem;color:#94a3b8;font-family:var(--font-ui);">LCD 表情变化 + AI 对话反馈</span>
+        </div>
         <div class="split-note">LCD 表情变化 + 聊天窗口反馈</div>
       </div>
     </div>
@@ -1636,8 +2018,90 @@ if (endFace) {
   }, 300);
 }
 
+// ===== DEMO ANIMATION LOOPS =====
+
+// -- Camera emotion tag cycling --
+(function() {
+  const tag = document.getElementById('emotionTag');
+  if (!tag) return;
+  const emotions = [
+    { text: 'neutral', color: '#94a3b8' },
+    { text: 'happy 92%', color: '#FFD43B' },
+    { text: 'surprise 78%', color: '#FFA94D' },
+    { text: 'neutral', color: '#94a3b8' },
+    { text: 'sad 45%', color: '#74C0FC' },
+    { text: 'neutral', color: '#94a3b8' },
+  ];
+  let i = 0;
+  setInterval(() => {
+    i = (i + 1) % emotions.length;
+    tag.textContent = emotions[i].text;
+    tag.style.color = emotions[i].color;
+  }, 2000);
+})();
+
+// -- Accelerometer reaction face switching --
+(function() {
+  const face = document.getElementById('accelReactFace');
+  const label = document.getElementById('accelReactLabel');
+  if (!face || !label) return;
+  const states = [
+    { src: 'emo_surprise_v1.png', label: '惊讶', color: '#FFA94D', duration: 2000 },
+    { src: 'emo_normal_v1.png', label: '恢复', color: '#94a3b8', duration: 1500 },
+    { src: 'emo_angry_v1.png', label: '生气', color: '#FF6B6B', duration: 2000 },
+    { src: 'emo_normal_v1.png', label: '恢复', color: '#94a3b8', duration: 1500 },
+  ];
+  let i = 0;
+  function cycle() {
+    const s = states[i];
+    const img = face.querySelector('img');
+    if (img) img.src = facesetBase + s.src;
+    label.textContent = s.label;
+    label.style.color = s.color;
+    i = (i + 1) % states.length;
+    setTimeout(cycle, s.duration);
+  }
+  cycle();
+})();
+
+// -- Camera reaction face switching --
+(function() {
+  const faceEl = document.getElementById('cameraReactFace');
+  if (!faceEl) return;
+  const faces = ['emo_normal_v1.png', 'emo_happy_v1.png', 'emo_normal_v1.png', 'emo_sad_v1.png'];
+  let i = 0;
+  setInterval(() => {
+    i = (i + 1) % faces.length;
+    faceEl.src = facesetBase + faces[i];
+  }, 3000);
+})();
+
+// -- Accel label switching --
+(function() {
+  const label = document.getElementById('accelLabel');
+  if (!label) return;
+  const states = [
+    { text: 'IDLE', color: '#94a3b8', duration: 1500 },
+    { text: 'SHAKE!', color: '#FFA94D', duration: 1500 },
+    { text: 'SHAKE!', color: '#FFA94D', duration: 1200 },
+    { text: 'IDLE', color: '#94a3b8', duration: 1000 },
+    { text: '', color: '', duration: 400 },
+    { text: 'TILT!', color: '#FF6B6B', duration: 1500 },
+    { text: 'IDLE', color: '#94a3b8', duration: 1500 },
+  ];
+  let i = 0;
+  function cycle() {
+    const s = states[i];
+    label.textContent = s.text;
+    label.style.color = s.color;
+    i = (i + 1) % states.length;
+    setTimeout(cycle, s.duration);
+  }
+  cycle();
+})();
+
 console.log('🐱 皮皮展示页面加载完成！');
-console.log('🖼️ 视频占位已替换为封面图');
+console.log('🎬 HTML 演示动画就绪');
 console.log('🎨 表情引擎: 8 表情 × 3 帧动画就绪');
 </script>
 
